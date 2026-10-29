@@ -28,9 +28,15 @@ EXPECTED_SIZES = {
     "test_unseen": 2000,
 }
 
-# Splits that ship with labels. The test splits are withheld in the original
-# release, so a mirror that has them labelled is not the original data.
-LABELLED = {"train", "dev_seen", "dev_unseen"}
+# Every split should carry labels.
+#
+# The original competition withheld the test labels and scored submissions on
+# a server, so an earlier version of this file treated a labelled test split
+# as evidence of a tampered copy. That was wrong twice over: the labels were
+# released after the competition closed, which is why Hate-CLIPper can report
+# a test-seen AUROC at all, and src/train.py needs them to evaluate anything.
+# A copy whose test splits are unlabelled is the one that cannot be used.
+LABELLED = {"train", "dev_seen", "dev_unseen", "test_seen", "test_unseen"}
 
 REQUIRED_FIELDS = {"id", "img", "text"}
 
@@ -71,15 +77,11 @@ class SplitReport:
             )
         if self.duplicate_ids:
             issues.append(f"{self.duplicate_ids} duplicate id(s)")
-        if self.split in LABELLED and self.labelled != self.count:
+        if self.labelled != self.count:
             issues.append(
-                f"{self.count - self.labelled} row(s) unlabelled in a "
-                "split that ships labelled"
-            )
-        if self.split not in LABELLED and self.labelled:
-            issues.append(
-                f"{self.labelled} row(s) carry labels in a split the original "
-                "release withholds; this copy is not the original data"
+                f"{self.count - self.labelled} row(s) unlabelled; the test "
+                "labels were released after the competition closed and "
+                "src/train.py needs them to evaluate"
             )
         if self.missing_images:
             issues.append(
