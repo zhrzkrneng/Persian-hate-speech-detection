@@ -13,12 +13,20 @@ import yaml
 class EncoderConfig:
     """Which vision-language encoder to extract frozen features from.
 
-    `name` is a HuggingFace model id. The pipeline is written against models
-    that expose `get_image_features` / `get_text_features`, which covers CLIP
-    and the multilingual CLIP variants we intend to compare against.
+    `name` is a HuggingFace model id, and `kind` says how to call it:
+
+    - "clip": one model exposing `get_image_features` / `get_text_features`.
+      Covers OpenAI CLIP, SigLIP and jina-clip-v2.
+    - "dual_tower": two separately published models, pooled via
+      `pooler_output`. This is how CLIPfa ships — a RoBERTa text tower and a
+      CLIP vision tower, trained together but released apart — and `name` is
+      then only a label, with `text_model` and `vision_model` naming the two.
     """
 
     name: str = "openai/clip-vit-large-patch14"
+    kind: str = "clip"
+    text_model: str = ""
+    vision_model: str = ""
     trust_remote_code: bool = False
     max_text_length: int = 77
     batch_size: int = 64
