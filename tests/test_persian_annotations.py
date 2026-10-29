@@ -161,3 +161,20 @@ def test_label_matrix_aligns_annotators_across_memes(tmp_path: Path) -> None:
 def test_missing_file_names_the_guideline(tmp_path: Path) -> None:
     with pytest.raises(FileNotFoundError, match="annotation-guideline"):
         PersianMemeSet(tmp_path / "absent.jsonl")
+
+
+def test_unannotated_meme_is_accepted(tmp_path: Path) -> None:
+    """The skeleton prepare_memes writes must be readable.
+
+    Most of the file is unannotated while annotation is in progress; rejecting
+    that would mean progress could not be checked until the last meme was done.
+    """
+    dataset = PersianMemeSet(write(tmp_path, meme(annotations=[])))
+    assert len(dataset) == 1
+    assert dataset[0].majority() is None
+    assert dataset[0].labels == ()
+
+
+def test_annotations_must_still_be_a_list(tmp_path: Path) -> None:
+    with pytest.raises(AnnotationError, match="must be a list"):
+        PersianMemeSet(write(tmp_path, meme(annotations="A1")))
