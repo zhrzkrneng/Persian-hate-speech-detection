@@ -12,7 +12,9 @@ from src.config import load_config  # noqa: E402
 CONFIG_DIR = Path(__file__).resolve().parents[1] / "configs"
 
 
-@pytest.mark.parametrize("path", sorted(CONFIG_DIR.glob("*.yaml")), ids=lambda p: p.name)
+@pytest.mark.parametrize(
+    "path", sorted(CONFIG_DIR.glob("*.yaml")), ids=lambda p: p.name
+)
 def test_shipped_configs_load(path: Path) -> None:
     config = load_config(path)
     assert config.model.fusion in {"concat", "align", "cross"}

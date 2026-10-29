@@ -7,7 +7,7 @@ the planned Persian experiments need.
 
 from __future__ import annotations
 
-from typing import Sequence
+from collections.abc import Sequence
 
 import torch
 from PIL import Image

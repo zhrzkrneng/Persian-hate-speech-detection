@@ -1,6 +1,6 @@
 """Train a classifier over cached encoder features.
 
-    python -m src.train --config configs/hmc_align.yaml [--seed 1]
+python -m src.train --config configs/hmc_align.yaml [--seed 1]
 """
 
 from __future__ import annotations
@@ -88,7 +88,9 @@ def train(config: Config) -> dict[str, Metrics]:
         if val_metrics.auroc > best_auroc:
             best_auroc = val_metrics.auroc
             best_val = val_metrics
-            best_state = {k: v.detach().cpu().clone() for k, v in model.state_dict().items()}
+            best_state = {
+                k: v.detach().cpu().clone() for k, v in model.state_dict().items()
+            }
 
     if best_state is None:
         raise RuntimeError("training produced no checkpoint; was epochs set to 0?")
