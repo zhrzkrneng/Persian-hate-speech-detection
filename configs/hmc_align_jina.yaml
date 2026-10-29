@@ -1,0 +1,60 @@
+# Hate-CLIPper align-fusion over jina-clip-v2 features.
+#
+# This is configs/hmc_align.yaml with the encoder swapped, and nothing else
+# changed, so the difference between the two runs is the encoder and only the
+# encoder. That is the whole point of keeping the encoder behind one config
+# field.
+#
+# Why this encoder: on Crossmodal-3600 it reaches 66.55 R@1 on Persian
+# text-to-image retrieval against a chance level of 0.10, above what CLIP
+# ViT-L/14 scores on English (60.05) and well above CLIPfa (36.90). See
+# runs/retrieval/ and the study in scripts/eval_retrieval.py.
+#
+# Two conditions that belong in the paper:
+#   - jina-clip-v2 is licensed CC BY-NC 4.0: research yes, product no.
+#   - it executes code downloaded from its model repository, which is what
+#     trust_remote_code means. Pin a revision before relying on it.
+#
+# Cost: it encodes images at 512x512, over five times CLIP's pixels. At batch
+# 32 on a 15 GB CPU machine feature extraction was killed by the OOM killer;
+# batch 8 peaks near 7.2 GB. On a GPU raise it until VRAM says otherwise.
+
+encoder:
+  name: jinaai/jina-clip-v2
+  kind: clip
+  trust_remote_code: true
+  # jina's text tower takes far more than CLIP's 77 tokens. Meme text is
+  # short, so this is headroom rather than a cost.
+  max_text_length: 512
+  batch_size: 8
+
+model:
+  architecture: hateclipper
+  fusion: align
+  # jina-clip-v2 embeds to 1024, so the projection is not reshaping here the
+  # way it does for CLIP's 768. Left at 1024 to match configs/hmc_align.yaml;
+  # worth an ablation once there are numbers to compare.
+  projection_dim: 1024
+  pre_output_dim: 1024
+  num_pre_output_layers: 1
+  dropout: 0.1
+  num_classes: 2
+
+train:
+  epochs: 20
+  batch_size: 64
+  learning_rate: 0.0001
+  weight_decay: 0.0001
+  grad_clip: 0.1
+  seed: 0
+  device: auto
+
+data:
+  name: hmc
+  root: data/hmc
+  feature_root: features
+  train_split: train
+  val_split: dev_seen
+  test_split: test_seen
+
+output_dir: runs
