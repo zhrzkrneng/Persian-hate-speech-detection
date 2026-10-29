@@ -37,9 +37,7 @@ def encode_split(
     image_batches: list[torch.Tensor] = []
     text_batches: list[torch.Tensor] = []
 
-    for start in tqdm(
-        range(0, len(split), batch_size), desc=f"encoding {split.split}"
-    ):
+    for start in tqdm(range(0, len(split), batch_size), desc=f"encoding {split.split}"):
         records = split.records[start : start + batch_size]
         images = [Image.open(r.image_path).convert("RGB") for r in records]
         image_batches.append(encoder.encode_images(images))
