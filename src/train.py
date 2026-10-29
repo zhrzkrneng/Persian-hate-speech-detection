@@ -16,9 +16,9 @@ from tqdm import tqdm
 
 from .config import Config, load_config
 from .data.features import FeatureDataset
-from .encoders import resolve_device
 from .evaluate import evaluate
 from .models.classifier import MemeClassifier
+from .utils.device import resolve_device
 from .utils.metrics import Metrics
 from .utils.seed import set_seed
 
