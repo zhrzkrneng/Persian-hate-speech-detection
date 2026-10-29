@@ -26,12 +26,20 @@ class EncoderConfig:
 
 @dataclass
 class ModelConfig:
-    fusion: str = "align"  # concat | align | cross
+    architecture: str = "hateclipper"  # hateclipper | memeclip
+    fusion: str = "align"  # concat | align | cross; hateclipper only
     projection_dim: int = 1024
     pre_output_dim: int = 1024
     num_pre_output_layers: int = 1
     dropout: float = 0.1
     num_classes: int = 2
+
+    # memeclip only. Each is separable so an ablation can attribute the gap
+    # between the two architectures to a specific component.
+    adapter_ratio: float = 0.2  # 0 disables the adapters entirely
+    adapter_reduction: int = 4
+    cosine_scale: float = 30.0
+    normalise_before_fusion: bool = True
 
 
 @dataclass

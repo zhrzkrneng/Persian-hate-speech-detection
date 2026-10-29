@@ -38,6 +38,23 @@ data:
     assert load_config(first).feature_dir != load_config(second).feature_dir
 
 
+def test_result_dir_separates_architectures(tmp_path: Path) -> None:
+    """memeclip also fuses by product, so fusion alone must not key results."""
+    from src.train import result_dir
+
+    base = """
+model:
+  architecture: {arch}
+  fusion: align
+"""
+    first = tmp_path / "a.yaml"
+    first.write_text(base.format(arch="hateclipper"))
+    second = tmp_path / "b.yaml"
+    second.write_text(base.format(arch="memeclip"))
+
+    assert result_dir(load_config(first)) != result_dir(load_config(second))
+
+
 def test_unknown_key_is_rejected(tmp_path: Path) -> None:
     path = tmp_path / "bad.yaml"
     path.write_text("model:\n  fusionn: align\n")
