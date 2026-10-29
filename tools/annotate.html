@@ -1,0 +1,406 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>برچسب‌زنی میم فارسی</title>
+<style>
+  :root {
+    --bg: #faf9f7; --fg: #1a1a18; --muted: #6b6b66;
+    --line: #e0ded9; --card: #ffffff;
+    --hate: #b3261e; --nohate: #1a7f4b; --skip: #8a6d1f;
+    --accent: #2b5fa8;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #17171a; --fg: #ece9e4; --muted: #9a978f;
+      --line: #32322f; --card: #1f1f22;
+      --hate: #f2817a; --nohate: #6cc795; --skip: #d9bc6a; --accent: #7fa8e8;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #17171a; --fg: #ece9e4; --muted: #9a978f;
+    --line: #32322f; --card: #1f1f22;
+    --hate: #f2817a; --nohate: #6cc795; --skip: #d9bc6a; --accent: #7fa8e8;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--fg);
+    font: 16px/1.7 system-ui, "Segoe UI", Tahoma, sans-serif;
+    padding: 16px;
+  }
+  .wrap { max-width: 880px; margin: 0 auto; }
+  h1 { font-size: 1.25rem; margin: 0 0 4px; }
+  .sub { color: var(--muted); font-size: .9rem; margin-bottom: 16px; }
+  .card {
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: 12px; padding: 16px; margin-bottom: 16px;
+  }
+  .warn {
+    border-right: 4px solid var(--skip); background: var(--card);
+    padding: 12px 16px; border-radius: 8px; margin-bottom: 16px;
+    font-size: .92rem;
+  }
+  button {
+    font: inherit; cursor: pointer; border-radius: 8px;
+    border: 1px solid var(--line); background: var(--card);
+    color: var(--fg); padding: 10px 16px;
+  }
+  button:hover { border-color: var(--accent); }
+  button:disabled { opacity: .45; cursor: default; }
+  .choice { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0; }
+  .choice button { flex: 1 1 140px; font-weight: 600; }
+  .b-hate { color: var(--hate); border-color: var(--hate); }
+  .b-nohate { color: var(--nohate); border-color: var(--nohate); }
+  .b-skip { color: var(--skip); border-color: var(--skip); }
+  .choice button[aria-pressed="true"] {
+    outline: 2px solid currentColor; outline-offset: 1px;
+  }
+  img#meme {
+    max-width: 100%; max-height: 52vh; display: block; margin: 0 auto;
+    border-radius: 8px; border: 1px solid var(--line);
+  }
+  .missing {
+    padding: 40px; text-align: center; color: var(--muted);
+    border: 1px dashed var(--line); border-radius: 8px;
+  }
+  label { display: block; font-size: .88rem; color: var(--muted); margin: 12px 0 4px; }
+  textarea, select, input[type=text] {
+    width: 100%; font: inherit; padding: 8px 10px; border-radius: 8px;
+    border: 1px solid var(--line); background: var(--bg); color: var(--fg);
+  }
+  textarea { min-height: 72px; resize: vertical; }
+  .row { display: flex; gap: 12px; flex-wrap: wrap; }
+  .row > div { flex: 1 1 200px; }
+  .bar { height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; }
+  .bar > i { display: block; height: 100%; background: var(--accent); }
+  .nav { display: flex; gap: 8px; align-items: center; justify-content: space-between; }
+  .counts { font-size: .85rem; color: var(--muted); }
+  kbd {
+    font: .8em monospace; border: 1px solid var(--line); border-bottom-width: 2px;
+    border-radius: 4px; padding: 1px 5px; background: var(--bg);
+  }
+  .hidden { display: none; }
+  footer { color: var(--muted); font-size: .82rem; margin-top: 24px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>برچسب‌زنی میم فارسی</h1>
+<div class="sub">بدون نصب، بدون سرور. هیچ چیزی از این صفحه جایی فرستاده نمی‌شود.</div>
+
+<div class="warn">
+  <strong>هشدار محتوا:</strong> با محتوای توهین‌آمیز روبه‌رو می‌شوید. هر وقت
+  ادامه دادن سخت شد، متوقف شوید و خروجی را ذخیره کنید. هیچ اشکالی ندارد.
+</div>
+
+<!-- ───────────────────────── setup ───────────────────────── -->
+<div class="card" id="setup">
+  <label for="who">نام شما (در فایل خروجی ثبت می‌شود)</label>
+  <input type="text" id="who" placeholder="مثلاً A1" autocomplete="off">
+
+  <label for="jsonl">فایل اسکلت (خروجی <code>prepare_memes.py</code>)</label>
+  <input type="file" id="jsonl" accept=".jsonl,.json">
+
+  <label for="imgs">پوشه‌ی تصاویر</label>
+  <input type="file" id="imgs" webkitdirectory directory multiple>
+
+  <p class="counts" id="setupMsg">هر سه مورد لازم است.</p>
+  <button id="start" disabled>شروع</button>
+</div>
+
+<!-- ───────────────────────── annotate ───────────────────────── -->
+<div class="hidden" id="work">
+  <div class="card">
+    <div class="nav">
+      <span class="counts" id="pos"></span>
+      <span class="counts" id="tally"></span>
+    </div>
+    <div class="bar" style="margin:8px 0 14px"><i id="prog" style="width:0%"></i></div>
+
+    <div id="imgBox"></div>
+
+    <label for="text">متن روی تصویر — دستی تایپ کنید (OCR فارسی روی میم قابل اتکا نیست)</label>
+    <textarea id="text" dir="rtl" spellcheck="false"></textarea>
+
+    <div class="choice">
+      <button class="b-nohate" data-label="0">غیرنفرت‌آمیز <kbd>1</kbd></button>
+      <button class="b-hate"   data-label="1">نفرت‌آمیز <kbd>2</kbd></button>
+      <button class="b-skip"   data-label="">نمی‌دانم <kbd>3</kbd></button>
+    </div>
+
+    <div id="extra" class="hidden">
+      <div class="row">
+        <div>
+          <label for="target">هدف حمله</label>
+          <select id="target">
+            <option value="">— انتخاب کنید —</option>
+            <option value="gender">جنسیت</option>
+            <option value="religion">مذهب</option>
+            <option value="ethnicity_nationality">قومیت یا ملیت</option>
+            <option value="political">هویت سیاسی</option>
+            <option value="disability">معلولیت</option>
+            <option value="sexual_orientation">گرایش جنسی</option>
+            <option value="other">سایر</option>
+          </select>
+        </div>
+        <div>
+          <label for="explicit">صریح یا ضمنی</label>
+          <select id="explicit">
+            <option value="">— انتخاب کنید —</option>
+            <option value="true">صریح — در کلمات یا تصویری بی‌ابهام</option>
+            <option value="false">ضمنی — کنایه، کلیشه، دانش پس‌زمینه</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="nav" style="margin-top:16px">
+      <button id="prev">قبلی</button>
+      <button id="next">بعدی</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <button id="save">ذخیره‌ی فایل خروجی</button>
+    <span class="counts" id="saveMsg"></span>
+    <p class="counts" style="margin:10px 0 0">
+      کار شما در همین مرورگر نگه داشته می‌شود، ولی تنها چیزی که می‌ماند فایلی
+      است که ذخیره می‌کنید. قبل از بستن صفحه ذخیره کنید.
+    </p>
+  </div>
+</div>
+
+<footer>
+  مستقل کار کنید و با برچسب‌زن‌های دیگر مشورت نکنید — اختلاف‌نظر خودش یکی از
+  یافته‌های این پژوهش است. راهنمای کامل:
+  <code>docs/annotation-guideline.fa.md</code>
+</footer>
+
+</div>
+
+<script>
+"use strict";
+
+// The schema these files must satisfy lives in src/data/persian.py, and
+// scripts/check_annotations.py enforces it. Anything written here has to pass
+// that reader, so the vocabulary below is copied from it rather than invented.
+const TARGETS = ["gender", "religion", "ethnicity_nationality", "political",
+                 "disability", "sexual_orientation", "other"];
+const STORE = "phsd-annotation-draft";
+
+let rows = [];          // the skeleton, one object per meme
+let images = new Map(); // basename -> object URL
+let work = [];          // our own answers, parallel to rows
+let at = 0;
+let annotator = "";
+
+const $ = (id) => document.getElementById(id);
+
+/* ── setup ───────────────────────────────────────────────── */
+
+function readyToStart() {
+  $("start").disabled = !(annotator && rows.length && images.size);
+  const bits = [];
+  if (rows.length) bits.push(`${rows.length} میم`);
+  if (images.size) bits.push(`${images.size} تصویر`);
+  $("setupMsg").textContent = bits.length ? bits.join(" · ") : "هر سه مورد لازم است.";
+}
+
+$("who").addEventListener("input", (e) => {
+  annotator = e.target.value.trim();
+  readyToStart();
+});
+
+$("jsonl").addEventListener("change", async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const text = await file.text();
+  rows = [];
+  for (const line of text.split("\n")) {
+    const t = line.trim();
+    if (!t) continue;
+    try {
+      rows.push(JSON.parse(t));
+    } catch {
+      $("setupMsg").textContent = "فایل معتبر نیست: هر خط باید یک JSON باشد.";
+      rows = [];
+      return;
+    }
+  }
+  readyToStart();
+});
+
+$("imgs").addEventListener("change", (e) => {
+  images = new Map();
+  for (const f of e.target.files) {
+    images.set(f.name, URL.createObjectURL(f));
+  }
+  readyToStart();
+});
+
+$("start").addEventListener("click", () => {
+  work = rows.map(() => ({ label: undefined, target: null, explicit: null, text: "" }));
+  restore();
+  $("setup").classList.add("hidden");
+  $("work").classList.remove("hidden");
+  show();
+});
+
+/* ── draft persistence ───────────────────────────────────── */
+// Convenience only: the real artefact is the file the annotator saves. A
+// private window or cleared site data makes this come back empty, so every
+// access is guarded and the page works without it.
+
+function persist() {
+  try {
+    localStorage.setItem(STORE, JSON.stringify({ annotator, at, work }));
+  } catch { /* storage unavailable or full; the saved file is what matters */ }
+}
+
+function restore() {
+  try {
+    const raw = localStorage.getItem(STORE);
+    if (!raw) return;
+    const d = JSON.parse(raw);
+    if (d && d.annotator === annotator && Array.isArray(d.work)
+        && d.work.length === rows.length) {
+      work = d.work;
+      at = Math.min(d.at || 0, rows.length - 1);
+    }
+  } catch { /* ignore a corrupt or unreadable draft */ }
+}
+
+/* ── one meme ────────────────────────────────────────────── */
+
+function basename(p) {
+  return String(p || "").split("/").pop();
+}
+
+function show() {
+  const row = rows[at];
+  const mine = work[at];
+
+  const name = basename(row.image || row.img || row.image_path || "");
+  const url = images.get(name);
+  $("imgBox").innerHTML = url
+    ? `<img id="meme" alt="meme ${row.id}" src="${url}">`
+    : `<div class="missing">تصویر پیدا نشد: <code>${name || "—"}</code><br>
+       مطمئن شوید پوشه‌ی درست را انتخاب کرده‌اید.</div>`;
+
+  $("text").value = mine.text || row.text || "";
+
+  for (const b of document.querySelectorAll(".choice button")) {
+    const v = b.dataset.label;
+    const chosen = (v === "" && mine.label === null)
+                || (v !== "" && mine.label === Number(v));
+    b.setAttribute("aria-pressed", chosen ? "true" : "false");
+  }
+
+  $("extra").classList.toggle("hidden", mine.label !== 1);
+  $("target").value = mine.target || "";
+  $("explicit").value = mine.explicit === null || mine.explicit === undefined
+    ? "" : String(mine.explicit);
+
+  const done = work.filter((w) => w.label !== undefined).length;
+  $("pos").textContent = `میم ${at + 1} از ${rows.length} — شناسه ${row.id}`;
+  $("prog").style.width = `${(100 * done) / rows.length}%`;
+  const hate = work.filter((w) => w.label === 1).length;
+  const no = work.filter((w) => w.label === 0).length;
+  const idk = work.filter((w) => w.label === null).length;
+  $("tally").textContent = `نفرت‌آمیز ${hate} · غیرنفرت‌آمیز ${no} · نمی‌دانم ${idk}`;
+  $("prev").disabled = at === 0;
+  $("next").disabled = at >= rows.length - 1;
+  $("saveMsg").textContent = "";
+}
+
+function capture() {
+  const mine = work[at];
+  mine.text = $("text").value;
+  if (mine.label === 1) {
+    mine.target = $("target").value || null;
+    const e = $("explicit").value;
+    mine.explicit = e === "" ? null : e === "true";
+  } else {
+    mine.target = null;
+    mine.explicit = null;
+  }
+  persist();
+}
+
+for (const b of document.querySelectorAll(".choice button")) {
+  b.addEventListener("click", () => {
+    const v = b.dataset.label;
+    work[at].label = v === "" ? null : Number(v);
+    capture();
+    show();
+  });
+}
+
+$("text").addEventListener("input", capture);
+$("target").addEventListener("change", capture);
+$("explicit").addEventListener("change", capture);
+
+$("prev").addEventListener("click", () => { capture(); at--; show(); });
+$("next").addEventListener("click", () => { capture(); at++; show(); });
+
+document.addEventListener("keydown", (e) => {
+  if (e.target.tagName === "TEXTAREA" || e.target.tagName === "INPUT"
+      || e.target.tagName === "SELECT") return;
+  if (e.key === "1") document.querySelector('[data-label="0"]').click();
+  if (e.key === "2") document.querySelector('[data-label="1"]').click();
+  if (e.key === "3") document.querySelector('[data-label=""]').click();
+  if (e.key === "ArrowLeft" && at < rows.length - 1) $("next").click();
+  if (e.key === "ArrowRight" && at > 0) $("prev").click();
+});
+
+/* ── output ──────────────────────────────────────────────── */
+
+$("save").addEventListener("click", () => {
+  capture();
+
+  // A hate label needs a target and an explicitness, or the reader rejects
+  // the whole file. Say which memes are incomplete rather than writing
+  // something that will fail later.
+  const bad = [];
+  work.forEach((w, i) => {
+    if (w.label === 1 && (!TARGETS.includes(w.target) || typeof w.explicit !== "boolean")) {
+      bad.push(rows[i].id);
+    }
+  });
+  if (bad.length) {
+    $("saveMsg").textContent =
+      `${bad.length} میم نفرت‌آمیز هدف یا صریح/ضمنی ندارد: ${bad.slice(0, 5).join("، ")}`;
+    return;
+  }
+
+  const out = rows.map((row, i) => {
+    const w = work[i];
+    const copy = JSON.parse(JSON.stringify(row));
+    copy.text = w.text || "";
+    const existing = Array.isArray(copy.annotations) ? copy.annotations : [];
+    // Replace only this annotator's own entry, so a file already carrying
+    // someone else's work is merged rather than overwritten.
+    copy.annotations = existing.filter((a) => a.annotator !== annotator);
+    if (w.label !== undefined) {
+      const a = { annotator, label: w.label };
+      if (w.label === 1) { a.target = w.target; a.explicit = w.explicit; }
+      copy.annotations.push(a);
+    }
+    return JSON.stringify(copy);
+  }).join("\n") + "\n";
+
+  const blob = new Blob([out], { type: "application/x-ndjson" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `annotations_${annotator || "anon"}.jsonl`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+
+  const done = work.filter((w) => w.label !== undefined).length;
+  $("saveMsg").textContent = `ذخیره شد — ${done} از ${rows.length} برچسب خورده.`;
+});
+</script>
+</body>
+</html>
