@@ -17,7 +17,7 @@ from tqdm import tqdm
 from .config import Config, load_config
 from .data.features import FeatureDataset
 from .evaluate import evaluate
-from .models.classifier import MemeClassifier
+from .models import build_model
 from .utils.device import resolve_device
 from .utils.metrics import Metrics
 from .utils.seed import set_seed
@@ -46,8 +46,9 @@ def train(config: Config) -> dict[str, Metrics]:
     device = resolve_device(config.train.device)
 
     train_loader, val_loader, test_loader, feature_dim = build_loaders(config)
-    model = MemeClassifier(config.model, feature_dim).to(device)
+    model = build_model(config.model, feature_dim).to(device)
     print(
+        f"architecture={config.model.architecture} "
         f"fusion={config.model.fusion} "
         f"trainable params={model.trainable_parameters():,} "
         f"device={device}"
@@ -104,14 +105,30 @@ def train(config: Config) -> dict[str, Metrics]:
     return {"val": best_val, "test": test_metrics}
 
 
+def result_dir(config: Config) -> Path:
+    """Where this run's per-seed files live.
+
+    Keyed by architecture as well as fusion: memeclip also fuses by
+    element-wise product, so keying on fusion alone would let the two
+    architectures overwrite each other's results.
+    """
+    return (
+        config.output_dir
+        / config.data.name
+        / config.model.architecture
+        / config.model.fusion
+    )
+
+
 def write_result(config: Config, results: dict[str, Metrics]) -> Path:
-    output = config.output_dir / config.data.name / config.model.fusion
+    output = result_dir(config)
     output.mkdir(parents=True, exist_ok=True)
     path = output / f"seed{config.train.seed}.json"
     path.write_text(
         json.dumps(
             {
                 "encoder": config.encoder.name,
+                "architecture": config.model.architecture,
                 "fusion": config.model.fusion,
                 "seed": config.train.seed,
                 "val": results["val"].as_dict(),
@@ -129,6 +146,7 @@ def main() -> None:
     parser.add_argument("--config", required=True)
     parser.add_argument("--seed", type=int, help="override the config seed")
     parser.add_argument("--fusion", help="override the config fusion variant")
+    parser.add_argument("--architecture", help="override the config architecture")
     args = parser.parse_args()
 
     config = load_config(args.config)
@@ -136,6 +154,8 @@ def main() -> None:
         config.train.seed = args.seed
     if args.fusion is not None:
         config.model.fusion = args.fusion
+    if args.architecture is not None:
+        config.model.architecture = args.architecture
 
     results = train(config)
     print(f"wrote {write_result(config, results)}")
