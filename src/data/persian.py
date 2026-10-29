@@ -109,8 +109,13 @@ def _parse_meme(row: dict, where: str) -> AnnotatedMeme:
         raise AnnotationError(f"{where}: image_sha256 must be 64 hex characters")
 
     raw_annotations = row["annotations"]
-    if not isinstance(raw_annotations, list) or not raw_annotations:
-        raise AnnotationError(f"{where}: annotations must be a non-empty list")
+    # An empty list is allowed: it is a meme prepared but not yet annotated,
+    # which is the normal state of most of the file while annotation is in
+    # progress, and what scripts/prepare_memes.py writes. Coverage is reported
+    # by scripts/check_annotations.py rather than enforced here, so progress
+    # can be checked on a half-finished file.
+    if not isinstance(raw_annotations, list):
+        raise AnnotationError(f"{where}: annotations must be a list")
 
     annotations = tuple(
         _parse_annotation(a, f"{where} annotation {i}")
