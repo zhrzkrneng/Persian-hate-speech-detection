@@ -1,6 +1,12 @@
 torch>=2.2
 torchvision>=0.17
-transformers>=4.40
+# Pinned below 5: jina-clip-v2's remote modelling code imports clip_loss from
+# transformers.models.clip.modeling_clip, which 5.x removed. Our own code works
+# with either, but the encoder comparison needs a version all three models load
+# under.
+transformers>=4.40,<5
+einops>=0.7          # required by jina-clip-v2's remote code
+timm>=0.9            # required by jina-clip-v2's vision tower
 pillow>=10.0
 numpy>=1.24
 pandas>=2.0
