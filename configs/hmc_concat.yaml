@@ -1,0 +1,35 @@
+# Concat-fusion control. Hate-CLIPper's claim is that explicit cross-modal
+# interaction beats concatenation; this config is what that claim is measured
+# against, under identical settings.
+
+encoder:
+  name: openai/clip-vit-large-patch14
+  max_text_length: 77
+  batch_size: 64
+
+model:
+  fusion: concat
+  projection_dim: 1024
+  pre_output_dim: 1024
+  num_pre_output_layers: 1
+  dropout: 0.1
+  num_classes: 2
+
+train:
+  epochs: 20
+  batch_size: 64
+  learning_rate: 0.0001
+  weight_decay: 0.0001
+  grad_clip: 0.1
+  seed: 0
+  device: auto
+
+data:
+  name: hmc
+  root: data/hmc
+  feature_root: features
+  train_split: train
+  val_split: dev_seen
+  test_split: test_seen
+
+output_dir: runs

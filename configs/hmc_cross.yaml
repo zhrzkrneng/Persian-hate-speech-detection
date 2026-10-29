@@ -1,0 +1,39 @@
+# Cross-fusion: the full n x n feature interaction matrix.
+#
+# WARNING: at projection_dim 1024 the first classifier layer alone holds
+# ~1.1B parameters and will not fit a free Colab or Kaggle GPU. The projection
+# dim is reduced here so the variant is at least runnable; a run at 1024 is not
+# comparable to one at 256, so do not put them in the same table without
+# saying so.
+
+encoder:
+  name: openai/clip-vit-large-patch14
+  max_text_length: 77
+  batch_size: 64
+
+model:
+  fusion: cross
+  projection_dim: 256
+  pre_output_dim: 1024
+  num_pre_output_layers: 1
+  dropout: 0.1
+  num_classes: 2
+
+train:
+  epochs: 20
+  batch_size: 64
+  learning_rate: 0.0001
+  weight_decay: 0.0001
+  grad_clip: 0.1
+  seed: 0
+  device: auto
+
+data:
+  name: hmc
+  root: data/hmc
+  feature_root: features
+  train_split: train
+  val_split: dev_seen
+  test_split: test_seen
+
+output_dir: runs
