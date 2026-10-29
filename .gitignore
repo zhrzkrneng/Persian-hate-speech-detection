@@ -10,8 +10,14 @@
 *.npy
 *.pt
 
-# Run artefacts
-runs/
+# Run artefacts. Measured results are kept: they are this project's own
+# numbers, a few hundred bytes each, and a paper's claim should be traceable
+# to the file that produced it. Only the heavy, regenerable artefacts are
+# ignored.
+/runs/**
+!/runs/
+!/runs/*/
+!/runs/**/*.json
 checkpoints/
 *.log
 
