@@ -13,6 +13,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from src.config import load_config  # noqa: E402
+from src.train import result_dir  # noqa: E402
 from src.utils.metrics import Metrics, summarise  # noqa: E402
 
 
@@ -36,10 +37,12 @@ def main() -> None:
     args = parser.parse_args()
 
     config = load_config(args.config)
-    directory = config.output_dir / config.data.name / config.model.fusion
-    val, test, seeds = collect(directory)
+    val, test, seeds = collect(result_dir(config))
 
-    print(f"{config.data.name} / {config.model.fusion} / {config.encoder.name}")
+    print(
+        f"{config.data.name} / {config.model.architecture} / "
+        f"{config.model.fusion} / {config.encoder.name}"
+    )
     print(f"{len(seeds)} seeds: {seeds}\n")
     for name, runs in (("val", val), ("test", test)):
         summary = summarise(runs)

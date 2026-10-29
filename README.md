@@ -25,15 +25,34 @@ which is the gap this work targets.
 
 ## Planned components
 
-| Role | Source |
-| --- | --- |
-| Base model | Hate-CLIPper, align-fusion variant |
-| Second baseline | [MemeCLIP](https://aclanthology.org/2024.emnlp-main.959) (EMNLP 2024) |
-| Technical contribution | One of: multilingual text encoder, or retrieval-guided contrastive loss ([RGCL](https://arxiv.org/abs/2311.08110)) |
-| Data contribution | Persian meme evaluation set, annotated under a [Multi3Hate](https://aclanthology.org/2025.naacl-long.490/)-style cross-cultural protocol |
+| Role | Source | Status |
+| --- | --- | --- |
+| Base model | Hate-CLIPper, align-fusion variant | implemented |
+| Second baseline | [MemeCLIP](https://aclanthology.org/2024.emnlp-main.959) (EMNLP 2024) | implemented |
+| Technical contribution | One of: multilingual text encoder, or retrieval-guided contrastive loss ([RGCL](https://arxiv.org/abs/2311.08110)) | undecided |
+| Data contribution | Persian meme evaluation set, annotated under a [Multi3Hate](https://aclanthology.org/2025.naacl-long.490/)-style cross-cultural protocol | not started |
 
 Only one technical contribution will be carried through to completion. A single
 idea evaluated properly over multiple seeds is worth more than three partial ones.
+
+### Baselines
+
+Both architectures read the same cached features, so a comparison between them
+changes the model and nothing else.
+
+```bash
+python -m src.train --config configs/hmc_align.yaml      # Hate-CLIPper
+```
+
+```bash
+python -m src.train --config configs/hmc_memeclip.yaml   # MemeCLIP
+```
+
+They share more than the papers suggest: both fuse by element-wise product of
+the projected features. MemeCLIP adds residual adapters, L2 normalisation
+before the product, and a cosine classifier. Each is separately switchable
+(`adapter_ratio: 0`, `normalise_before_fusion: false`) so an ablation can say
+which one earns its place.
 
 ## Datasets
 
