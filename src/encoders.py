@@ -14,6 +14,9 @@ from PIL import Image
 from transformers import AutoModel, AutoProcessor
 
 from .config import EncoderConfig
+from .utils.device import resolve_device
+
+__all__ = ["FrozenEncoder", "resolve_device"]
 
 
 class FrozenEncoder:
@@ -64,9 +67,3 @@ class FrozenEncoder:
             if hasattr(config, attr):
                 return int(getattr(config, attr))
         raise AttributeError(f"cannot infer feature dim for {self.config.name}")
-
-
-def resolve_device(preference: str = "auto") -> torch.device:
-    if preference == "auto":
-        return torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    return torch.device(preference)
