@@ -12,8 +12,16 @@ Hateful Memes Challenge (Kiela et al., NeurIPS 2020)
 
 The data is released by Meta under a click-through licence agreement that you
 must accept yourself. It does not permit redistribution, so it is neither
-stored in this repository nor downloaded automatically. Third-party mirrors
-carry inconsistent licence labels; use the official source.
+stored in this repository nor downloaded automatically.
+
+Try the official site first. If it is unreachable -- the competition page has
+stopped serving the data publicly and people now circulate mirrors -- then
+whatever copy you obtain must be verified before you trust it. Mirrors
+differ: some are subsets, some re-split the data, some drop a field. A copy
+that does not match the published splits yields numbers comparable with no
+paper, and training on it would simply succeed.
+
+Cite Kiela et al. (2020) either way, and say in the paper where you got it.
 
 After accepting the licence, unpack the archive so that it looks like this:
 
@@ -31,22 +39,14 @@ if [ ! -d "$ROOT" ]; then
 fi
 
 echo "checking $ROOT"
-status=0
-for split in train dev_seen dev_unseen test_seen; do
-  file="$ROOT/$split.jsonl"
-  if [ -f "$file" ]; then
-    printf '  ok      %-16s %s lines\n' "$split.jsonl" "$(wc -l < "$file")"
-  else
-    printf '  MISSING %s\n' "$split.jsonl"
-    status=1
-  fi
-done
+echo
 
-if [ -d "$ROOT/img" ]; then
-  printf '  ok      img/            %s files\n' "$(find "$ROOT/img" -type f | wc -l)"
+# Line counting is not enough: a mirror can have the right files and the wrong
+# contents. Hand over to the verifier, which checks the split sizes against
+# the published ones, the labels, the referenced images and train/eval
+# leakage.
+if command -v python >/dev/null 2>&1; then
+  python -m scripts.check_hmc --root "$ROOT"
 else
-  printf '  MISSING img/\n'
-  status=1
+  python3 -m scripts.check_hmc --root "$ROOT"
 fi
-
-exit "$status"
