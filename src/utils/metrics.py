@@ -8,7 +8,7 @@ AUROC alone hides a lot.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 
 import numpy as np
 from sklearn.metrics import accuracy_score, f1_score, roc_auc_score
