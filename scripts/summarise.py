@@ -1,6 +1,6 @@
 """Aggregate per-seed result files into a mean +/- std table.
 
-    python -m scripts.summarise --config configs/hmc_align.yaml
+python -m scripts.summarise --config configs/hmc_align.yaml
 """
 
 from __future__ import annotations
