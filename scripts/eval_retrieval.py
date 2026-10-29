@@ -37,9 +37,12 @@ from tqdm import tqdm  # noqa: E402
 
 from src.config import EncoderConfig  # noqa: E402
 from src.data.xm3600 import Crossmodal3600  # noqa: E402
-from src.encoders import build_encoder  # noqa: E402
 from src.utils.device import resolve_device  # noqa: E402
 from src.utils.seed import set_seed  # noqa: E402
+
+# src.encoders is imported inside run(), not here: it pulls in transformers,
+# which CI deliberately does not install. The retrieval metric below needs no
+# encoder, and tests/test_retrieval_metrics.py imports this module for it.
 
 # Named shorthands for the models under comparison, so a run is one flag.
 PRESETS: dict[str, EncoderConfig] = {
@@ -139,6 +142,8 @@ def run(
         f"{preset} / {language}: {len(records)} images, {len(texts)} captions, "
         f"device {device}"
     )
+    from src.encoders import build_encoder
+
     encoder = build_encoder(config, device)
 
     image_features = encode_images(encoder, [r.image_path for r in records], batch_size)
