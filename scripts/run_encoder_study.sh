@@ -20,15 +20,34 @@ set -uo pipefail
 N="${1:-1000}"
 OUT="runs/retrieval"
 
+# Batch size per encoder, because they do not cost the same.
+#
+# jina-clip-v2 processes images at 512x512 — over five times the pixels of
+# CLIP's 224 — so its activations are correspondingly larger. At batch 32 on
+# a 15 GB CPU machine it reached 13.6 GB resident and the kernel's OOM killer
+# took it; the run left no result and no error anyone could see, because the
+# process was killed rather than failing. At batch 8 it peaks near 7.2 GB.
+#
+# Raise these on a GPU, where the limit is VRAM and the arithmetic is
+# different.
+batch_for() {
+  case "$1" in
+    jina-v2) echo 8 ;;
+    *) echo 32 ;;
+  esac
+}
+
 for encoder in clip-l14 jina-v2 clipfa; do
+  batch="$(batch_for "$encoder")"
   for language in fa en; do
-    echo "=== ${encoder} / ${language} (${N} images) ==="
+    echo "=== ${encoder} / ${language} (${N} images, batch ${batch}) ==="
     # Keep going if one encoder fails: a missing or gated model should not
     # cost the runs that would have succeeded.
     python -m scripts.eval_retrieval \
       --encoder "$encoder" \
       --language "$language" \
       --limit "$N" \
+      --batch-size "$batch" \
       --out "$OUT" || echo "FAILED: ${encoder}/${language}"
   done
 done
