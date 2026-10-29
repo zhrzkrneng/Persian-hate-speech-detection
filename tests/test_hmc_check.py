@@ -57,16 +57,9 @@ def write_split(
 
 
 def build_good(root: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
-    monkeypatch.setitem_many = None  # documentation: we patch sizes below
     start = 0
     for split, count in SMALL.items():
-        write_split(
-            root,
-            split,
-            count,
-            labelled=split in {"train", "dev_seen", "dev_unseen"},
-            start=start,
-        )
+        write_split(root, split, count, labelled=True, start=start)
         start += 100
     return root
 
@@ -133,7 +126,7 @@ def test_missing_image_is_reported(tmp_path: Path, small_sizes, monkeypatch) -> 
         tmp_path,
         "test_seen",
         SMALL["test_seen"],
-        labelled=False,
+        labelled=True,
         start=900,
         make_images=False,
     )
@@ -150,22 +143,33 @@ def test_skipping_image_checks_hides_only_that(
         tmp_path,
         "test_seen",
         SMALL["test_seen"],
-        labelled=False,
+        labelled=True,
         start=900,
         make_images=False,
     )
     assert read_split(tmp_path, "test_seen", check_images=False).problems == []
 
 
-def test_labelled_test_split_is_reported(
+def test_unlabelled_test_split_is_reported(
     tmp_path: Path, small_sizes, monkeypatch
 ) -> None:
-    """The original release withholds test labels; a labelled one is not it."""
+    """A copy without test labels cannot produce a test number.
+
+    The competition withheld these and scored on a server; they were released
+    afterwards, which is why Hate-CLIPper reports a test-seen AUROC. An
+    earlier version of this check had the rule inverted and would have
+    rejected every usable copy.
+    """
     build_good(tmp_path, monkeypatch)
-    write_split(tmp_path, "test_seen", SMALL["test_seen"], labelled=True)
-    assert "not the original data" in " ".join(
-        read_split(tmp_path, "test_seen").problems
-    )
+    write_split(tmp_path, "test_seen", SMALL["test_seen"], labelled=False, start=400)
+    assert "unlabelled" in " ".join(read_split(tmp_path, "test_seen").problems)
+
+
+def test_labelled_test_split_is_accepted(
+    tmp_path: Path, small_sizes, monkeypatch
+) -> None:
+    build_good(tmp_path, monkeypatch)
+    assert read_split(tmp_path, "test_seen").problems == []
 
 
 def test_train_test_leakage_is_reported(
@@ -173,7 +177,7 @@ def test_train_test_leakage_is_reported(
 ) -> None:
     build_good(tmp_path, monkeypatch)
     # Re-write test_seen using train's ids.
-    write_split(tmp_path, "test_seen", SMALL["test_seen"], labelled=False, start=0)
+    write_split(tmp_path, "test_seen", SMALL["test_seen"], labelled=True, start=0)
     found = leakage(tmp_path)
     assert found and found[0][1] == "test_seen"
 
