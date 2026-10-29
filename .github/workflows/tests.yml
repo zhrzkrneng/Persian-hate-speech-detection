@@ -26,15 +26,15 @@ jobs:
           python-version: ${{ matrix.python-version }}
           cache: pip
 
-      # requirements.txt minus transformers, pillow and pandas: nothing the
-      # tests import needs an encoder or reads an image, so CI takes seconds
+      # requirements.txt minus transformers and pandas: nothing the tests
+      # import needs an encoder, so CI takes seconds
       # instead of pulling a multi-gigabyte wheel. Keep this list in step with
       # what src/ imports — a module missing here fails only in CI.
       - name: Install
         run: |
           python -m pip install --upgrade pip
           pip install torch --index-url https://download.pytorch.org/whl/cpu
-          pip install numpy scikit-learn pyyaml tqdm pytest ruff
+          pip install numpy scikit-learn pyyaml tqdm pillow pytest ruff
 
       - name: Lint
         run: ruff check .
