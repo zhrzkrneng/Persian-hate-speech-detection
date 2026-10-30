@@ -50,6 +50,21 @@ attributions, which `scripts/download_xm3600.py` fetches alongside.
 Open Images URL pattern for Crossmodal-3600 images produced 1746 spurious 404s.
 The project page links a single tarball that takes twelve seconds.
 
+**Preparing the annotation file must be idempotent.** Collection happens in
+sessions, so `scripts/prepare_memes.py` runs many times over a file that holds
+annotation work. It rebuilt that file from scratch once: re-running it after a
+single further meme had been collected destroyed nine labels and three hand
+transcriptions, exited 0, and renumbered every id, so `fa_0000` afterwards
+named a different meme than the annotators had discussed. Rows are matched by
+image hash, ids are never reassigned, and a row whose image has gone missing
+is reported rather than dropped.
+
+**Provenance is recorded at collection time, not after.** The platform and the
+collection date are not recoverable from a folder of images, and no one
+reconstructs three hundred of them from memory. `data/persian/sources.csv`
+holds them, `--init-manifest` extends it without touching a filled-in row, and
+the scope decision behind all of it is in `docs/collection-protocol.md`.
+
 ## Rules about the code
 
 **Encoding is cached, never repeated.** Frozen encoder features depend on the

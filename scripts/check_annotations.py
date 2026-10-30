@@ -67,6 +67,23 @@ def main() -> None:
             f"first: {ties[:5]}"
         )
 
+    # Provenance. The guideline requires the platform and the collection date
+    # for every meme, and those stop being recoverable almost immediately.
+    # Reported here as well as in prepare_memes, because this is the script
+    # run before the set is released and a blank source is not fixable then.
+    blank = [
+        m.uid
+        for m in dataset.memes
+        if not (m.source.get("platform") and m.source.get("collected"))
+    ]
+    if blank:
+        print(
+            f"NO PROVENANCE    {len(blank)} meme(s) have no platform or no "
+            f"collection date, first: {blank[:5]}\n"
+            "                 scripts/prepare_memes.py --init-manifest records "
+            "these at collection time."
+        )
+
     duplicates = dataset.duplicate_images()
     if duplicates:
         print(f"DUPLICATE IMAGE  {len(duplicates)} hash(es) appear more than once")

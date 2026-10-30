@@ -137,8 +137,12 @@ version are re-annotated.
 
 ## 8. Collection
 
+`collection-protocol.md` holds the operational version of this section: the
+scope decision, the folder layout and the commands a collecting session runs.
+
 - **Sources**: public Persian-language meme accounts and channels. Record the
-  platform and collection date for each item.
+  platform and collection date for each item, in `data/persian/sources.csv`, in
+  the same session as the collecting — they are not recoverable afterwards.
 - **Size**: 300 to 500 memes. Multi3Hate works with 300. A small, carefully
   labelled set is worth more here than a large noisy one, and it is what three
   annotators can actually get through.
@@ -170,7 +174,8 @@ political target category will be the most sensitive one in this dataset.
 Decide deliberately, before collection, what is in scope and what is not, and
 write that decision into the paper's Ethics Statement rather than leaving it
 implicit. This is a judgement about your own circumstances that only you can
-make.
+make. **The decision taken for this project, and the identity-versus-institution
+boundary it rests on, is recorded in `collection-protocol.md` §1.**
 
 **What gets released.** Labels, the per-annotator labels, the guideline, image
 hashes and source URLs — never the meme images themselves. The images are
