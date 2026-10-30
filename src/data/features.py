@@ -95,6 +95,86 @@ class FeatureCache:
         return torch.load(self.path, map_location="cpu", weights_only=False)
 
 
+class ShardError(ValueError):
+    """Shards on disk do not describe the split being encoded."""
+
+
+def shard_path(directory: str | Path, split: str, start: int) -> Path:
+    return Path(directory) / f"{split}.shard{start:06d}.pt"
+
+
+def save_shard(
+    directory: str | Path,
+    split: str,
+    start: int,
+    image_features: torch.Tensor,
+    text_features: torch.Tensor,
+    encoder: str,
+) -> Path:
+    """Write one contiguous piece of a split's features.
+
+    Extraction on CPU takes hours, and this machine is restarted without
+    notice. The first CLIP ViT-L/14 attempt died at batch 15 of 133 after 37
+    minutes and left nothing at all, because a split's cache was only written
+    once the whole split had been encoded. Shards make the cost of a restart
+    the current shard rather than everything.
+    """
+    path = shard_path(directory, split, start)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    torch.save(
+        {
+            "image_features": image_features,
+            "text_features": text_features,
+            "start": start,
+            "count": len(image_features),
+            "encoder": encoder,
+            "split": split,
+        },
+        path,
+    )
+    return path
+
+
+def load_shards(directory: str | Path, split: str, encoder: str) -> list[dict]:
+    """Every shard on disk for this split, in order, validated.
+
+    A shard recorded against another encoder is refused rather than ignored:
+    silently encoding half a split with one encoder and half with another is
+    the kind of mistake that produces a plausible number.
+    """
+    found = []
+    for path in sorted(Path(directory).glob(f"{split}.shard*.pt")):
+        payload = torch.load(path, map_location="cpu", weights_only=False)
+        if payload.get("encoder") != encoder:
+            raise ShardError(
+                f"{path} was written from {payload.get('encoder')!r}, not "
+                f"{encoder!r}. Delete the shards for this split and re-encode."
+            )
+        if payload.get("split") != split:
+            raise ShardError(f"{path} holds split {payload.get('split')!r}")
+        found.append(payload)
+
+    found.sort(key=lambda p: p["start"])
+    expected = 0
+    for payload in found:
+        if payload["start"] != expected:
+            raise ShardError(
+                f"{split}: shards do not tile from 0 -- expected a shard at "
+                f"{expected}, found one at {payload['start']}. This happens "
+                "when the shard size changes between runs; delete them and "
+                "re-encode."
+            )
+        expected += payload["count"]
+    return found
+
+
+def clear_shards(directory: str | Path, split: str) -> int:
+    paths = list(Path(directory).glob(f"{split}.shard*.pt"))
+    for path in paths:
+        path.unlink()
+    return len(paths)
+
+
 class FeatureDataset(Dataset):
     def __init__(
         self,

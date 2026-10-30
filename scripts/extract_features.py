@@ -19,14 +19,54 @@ from tqdm import tqdm
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from src.config import Config, load_config  # noqa: E402
-from src.data.features import FeatureCache  # noqa: E402
+from src.data.features import (  # noqa: E402
+    FeatureCache,
+    clear_shards,
+    load_shards,
+    save_shard,
+)
 from src.data.hmc import HatefulMemesSplit  # noqa: E402
 from src.encoders import FrozenEncoder, resolve_device  # noqa: E402
 
 
+def encode_shard(
+    encoder: FrozenEncoder,
+    split: HatefulMemesSplit,
+    begin: int,
+    end: int,
+    batch_size: int,
+) -> tuple[torch.Tensor, torch.Tensor]:
+    image_batches: list[torch.Tensor] = []
+    text_batches: list[torch.Tensor] = []
+    for start in tqdm(
+        range(begin, end, batch_size),
+        desc=f"{split.split} {begin}-{end}",
+        leave=False,
+    ):
+        records = split.records[start : min(start + batch_size, end)]
+        images = [Image.open(r.image_path).convert("RGB") for r in records]
+        image_batches.append(encoder.encode_images(images))
+        text_batches.append(encoder.encode_texts([r.text for r in records]))
+        for image in images:
+            image.close()
+    return torch.cat(image_batches), torch.cat(text_batches)
+
+
 def encode_split(
-    encoder: FrozenEncoder, split: HatefulMemesSplit, batch_size: int
+    encoder: FrozenEncoder,
+    split: HatefulMemesSplit,
+    batch_size: int,
+    directory: Path,
+    encoder_name: str,
+    shard_size: int,
 ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, list[str]]:
+    """Encode a split in shards, resuming from whatever is already on disk.
+
+    Hours of CPU encoding on a machine that restarts without notice used to
+    cost everything: the cache was written once, after the whole split, so a
+    restart at batch 15 of 133 left nothing. Now each shard lands as it is
+    finished and a restart costs the shard in flight.
+    """
     missing = split.missing_images()
     if missing:
         raise FileNotFoundError(
@@ -34,16 +74,30 @@ def encode_split(
             f"missing, first: {missing[0]}"
         )
 
-    image_batches: list[torch.Tensor] = []
-    text_batches: list[torch.Tensor] = []
+    done = load_shards(directory, split.split, encoder_name)
+    encoded = sum(shard["count"] for shard in done)
+    if encoded:
+        print(
+            f"{split.split}: resuming, {encoded}/{len(split)} already encoded "
+            f"in {len(done)} shard(s)"
+        )
 
-    for start in tqdm(range(0, len(split), batch_size), desc=f"encoding {split.split}"):
-        records = split.records[start : start + batch_size]
-        images = [Image.open(r.image_path).convert("RGB") for r in records]
-        image_batches.append(encoder.encode_images(images))
-        text_batches.append(encoder.encode_texts([r.text for r in records]))
-        for image in images:
-            image.close()
+    while encoded < len(split):
+        end = min(encoded + shard_size, len(split))
+        images, texts = encode_shard(encoder, split, encoded, end, batch_size)
+        save_shard(directory, split.split, encoded, images, texts, encoder_name)
+        encoded = end
+        print(f"{split.split}: {encoded}/{len(split)}", flush=True)
+
+    done = load_shards(directory, split.split, encoder_name)
+    total = sum(shard["count"] for shard in done)
+    if total != len(split):
+        raise ValueError(
+            f"{split.split}: shards hold {total} examples, the split has "
+            f"{len(split)}. Delete the shards for this split and re-encode."
+        )
+    image_batches = [shard["image_features"] for shard in done]
+    text_batches = [shard["text_features"] for shard in done]
 
     # Unlabelled splits (test_unseen as shipped) get -1 so the cache shape is
     # uniform; metrics must not be computed over them.
@@ -59,7 +113,7 @@ def encode_split(
     )
 
 
-def run(config: Config, overwrite: bool) -> None:
+def run(config: Config, overwrite: bool, shard_size: int) -> None:
     device = resolve_device(config.train.device)
     print(f"loading {config.encoder.name} on {device}")
     encoder = FrozenEncoder(config.encoder, device)
@@ -76,10 +130,19 @@ def run(config: Config, overwrite: bool) -> None:
             continue
         split = HatefulMemesSplit(config.data.root, name)
         image_features, text_features, labels, uids = encode_split(
-            encoder, split, config.encoder.batch_size
+            encoder,
+            split,
+            config.encoder.batch_size,
+            config.feature_dir,
+            config.encoder.name,
+            shard_size,
         )
         cache.save(image_features, text_features, labels, uids, config.encoder.name)
         print(f"{name}: {len(uids)} examples -> {cache.path}")
+        # The shards were scaffolding for the cache that now exists.
+        removed = clear_shards(config.feature_dir, name)
+        if removed:
+            print(f"{name}: removed {removed} shard file(s)")
 
 
 def main() -> None:
@@ -88,8 +151,16 @@ def main() -> None:
     parser.add_argument(
         "--overwrite", action="store_true", help="re-encode splits already cached"
     )
+    parser.add_argument(
+        "--shard-size",
+        type=int,
+        default=1000,
+        help="examples per resumable shard (default 1000)",
+    )
     args = parser.parse_args()
-    run(load_config(args.config), args.overwrite)
+    if args.shard_size < 1:
+        parser.error("--shard-size must be at least 1")
+    run(load_config(args.config), args.overwrite, args.shard_size)
 
 
 if __name__ == "__main__":
