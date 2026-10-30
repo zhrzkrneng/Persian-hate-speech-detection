@@ -118,6 +118,28 @@ and nothing else. Importing `src/encoders.py` for a helper pulled in
 `src/` that is not in the workflow's install list fails only in CI.
 `tests/test_imports.py` exists to make that failure name itself.
 
+It covers `scripts/` as well as `src/`, and did not at first: when
+`scripts/compare_cells.py` began importing `scipy`, CI had never installed it
+and it only arrived because scikit-learn happens to depend on it. A dependency
+that reaches you transitively is not declared -- `scipy` is now named in
+`requirements.txt` and in the workflow, and the walk covers both packages.
+
+**A rule of thumb is not a test.** `mean - sd > 0` was used as a verdict on a
+difference of +0.72 +/- 0.62 over five seeds and called it settled; the paired
+t-test puts it at p = 0.061. Comparisons between cells go through
+`scripts/compare_cells.py`, which reports the paired t-test, so a claim in the
+paper and the statistic behind it cannot drift apart. At five seeds the test
+has four degrees of freedom: "n.s." means these runs do not establish it, not
+that there is no difference.
+
+**The validation column cannot compare variants.** The validation AUROC each
+run records is the maximum over 20 epochs that selection picked, so it is
+biased upward, and the bias need not be equal across variants -- align feeds
+the head n inputs where concat feeds 2n. On jina the validation difference is
+significant (+0.90, p = 0.002) in the direction the test split does not
+support. Selection is what the validation split is for; `test_seen` is the
+only column that compares.
+
 **The floor is Python 3.10, and this machine cannot check that.** CI runs 3.10
 and 3.12; the cloud session runs 3.13. A 3.11-or-later standard library API
 therefore passes `ruff` and the whole test suite locally and fails only in CI,

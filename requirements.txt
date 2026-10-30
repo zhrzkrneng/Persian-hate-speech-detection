@@ -11,6 +11,10 @@ pillow>=10.0
 numpy>=1.24
 pandas>=2.0
 scikit-learn>=1.3
+# Declared, not left to scikit-learn to pull in: scripts/compare_cells.py
+# imports it directly for the paired t-test, and a dependency that only arrives
+# transitively breaks the day the package that carried it is dropped.
+scipy>=1.10
 torchmetrics>=1.3
 pyyaml>=6.0
 tqdm>=4.66
