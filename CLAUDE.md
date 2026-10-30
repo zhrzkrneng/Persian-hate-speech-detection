@@ -88,6 +88,12 @@ and nothing else. Importing `src/encoders.py` for a helper pulled in
 - **Do not switch branches in the main checkout while a background job is
   running there.** It already pulled the running script out from under a job
   mid-flight. Use `git worktree` instead.
+- The cloud session's checkout arrives with **no `remote.origin.fetch`
+  refspec**, so `origin/main` is frozen at whatever it was when the container
+  started and never moves, however often you fetch. `git log origin/main` then
+  shows a stale tip while `git ls-remote origin main` shows the real one — two
+  merged pull requests read as unmerged that way. Fix it once per session:
+  `git config remote.origin.fetch '+refs/heads/*:refs/remotes/origin/*'`.
 
 ## Before pushing
 
