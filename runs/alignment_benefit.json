@@ -1,0 +1,103 @@
+{
+  "language": "en",
+  "architecture": "hateclipper",
+  "points": [
+    {
+      "encoder": "clip-l14",
+      "label": "CLIP ViT-L/14",
+      "language": "en",
+      "t2i_r1": 60.04999876022339,
+      "i2t_r1": 72.2000002861023,
+      "images": 1000,
+      "benefit": 0.7208483393357398,
+      "benefit_sd": 0.6239387031723037,
+      "benefit_p": 0.061109553435744854,
+      "seeds": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "align_auroc": 82.09287715086035,
+      "concat_auroc": 81.37202881152461
+    },
+    {
+      "encoder": "clip-b32",
+      "label": "CLIP ViT-B/32",
+      "language": "en",
+      "t2i_r1": 58.799999952316284,
+      "i2t_r1": 69.9999988079071,
+      "images": 1000,
+      "benefit": 0.838575430172068,
+      "benefit_sd": 0.5466088777244262,
+      "benefit_p": 0.026524819029483455,
+      "seeds": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "align_auroc": 78.79119647859143,
+      "concat_auroc": 77.95262104841936
+    },
+    {
+      "encoder": "jina-v2",
+      "label": "jina-clip-v2",
+      "language": "en",
+      "t2i_r1": 70.24999856948853,
+      "i2t_r1": 78.1000018119812,
+      "images": 1000,
+      "benefit": -0.26222488995597926,
+      "benefit_sd": 0.38003651284112866,
+      "benefit_p": 0.19772782876046008,
+      "seeds": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "align_auroc": 79.20136054421769,
+      "concat_auroc": 79.46358543417367
+    },
+    {
+      "encoder": "clipfa",
+      "label": "CLIPfa",
+      "language": "en",
+      "t2i_r1": 0.20000000949949026,
+      "i2t_r1": 0.4000000189989805,
+      "images": 1000,
+      "benefit": -1.5323729491796698,
+      "benefit_sd": 0.9904782727548725,
+      "benefit_p": 0.025831193149361255,
+      "seeds": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "align_auroc": 61.1046818727491,
+      "concat_auroc": 62.63705482192877
+    }
+  ],
+  "relationship": {
+    "text -> image R@1": {
+      "n": 4,
+      "pearson_r": 0.8095851646601654,
+      "pearson_p": 0.19041483533983472,
+      "spearman_rho": 0.19999999999999998,
+      "spearman_p": 0.8
+    },
+    "image -> text R@1": {
+      "n": 4,
+      "pearson_r": 0.8484187773465823,
+      "pearson_p": 0.15158122265341767,
+      "spearman_rho": 0.19999999999999998,
+      "spearman_p": 0.8
+    }
+  },
+  "skipped": []
+}
