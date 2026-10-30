@@ -1,0 +1,48 @@
+# Concat-fusion control over jina-clip-v2 features.
+#
+# This is configs/hmc_align_jina.yaml with the fusion swapped, so the only
+# difference between the two runs is the fusion. That pairing is the whole
+# comparison Hate-CLIPper rests on -- explicit cross-modal interaction against
+# plain concatenation -- and its Limitations section reports that on Tamil the
+# advantage disappeared, which it attributes to a feature space CLIP never
+# aligned for that language. jina-clip-v2 did see Persian, so running the same
+# pairing over its features is what this project is for.
+#
+# Comparable to the align run: same projection dim, same budget, same cache.
+# Concatenation then gives the head 2n inputs against align's n, which is a
+# property of the variant rather than a difference in the setting.
+
+encoder:
+  name: jinaai/jina-clip-v2
+  kind: clip
+  trust_remote_code: true
+  max_text_length: 512
+  batch_size: 8
+
+model:
+  architecture: hateclipper
+  fusion: concat
+  projection_dim: 1024
+  pre_output_dim: 1024
+  num_pre_output_layers: 1
+  dropout: 0.1
+  num_classes: 2
+
+train:
+  epochs: 20
+  batch_size: 64
+  learning_rate: 0.0001
+  weight_decay: 0.0001
+  grad_clip: 0.1
+  seed: 0
+  device: auto
+
+data:
+  name: hmc
+  root: data/hmc
+  feature_root: features
+  train_split: train
+  val_split: dev_seen
+  test_split: test_seen
+
+output_dir: runs
