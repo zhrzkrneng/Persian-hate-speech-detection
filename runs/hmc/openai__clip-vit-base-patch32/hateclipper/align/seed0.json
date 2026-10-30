@@ -1,0 +1,16 @@
+{
+  "encoder": "openai/clip-vit-base-patch32",
+  "architecture": "hateclipper",
+  "fusion": "align",
+  "seed": 0,
+  "val": {
+    "auroc": 0.7445552159510971,
+    "accuracy": 0.68,
+    "macro_f1": 0.6677520101003389
+  },
+  "test": {
+    "auroc": 0.7896418567426972,
+    "accuracy": 0.7,
+    "macro_f1": 0.6923190528349723
+  }
+}
