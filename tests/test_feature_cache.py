@@ -199,3 +199,49 @@ def test_a_finished_cache_is_not_a_shard(tmp_path: Path) -> None:
     write(tmp_path)
     assert clear_shards(tmp_path, "train") == 0
     assert (tmp_path / "train.pt").exists()
+
+
+def test_a_cache_from_another_transformers_major_is_refused(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Measured, not assumed: image features differ across that boundary.
+
+    Encoding the same 64 memes under 4.57.6 and comparing with a cache written
+    under 5.22.0 gives a max absolute difference of 7.1e-02 on CLIP ViT-L/14,
+    against a feature scale of 11.4 -- the default image processor changed from
+    the slow PIL one to the fast torchvision one. Text features are identical.
+    Mixing the two means comparing preprocessing pipelines as well as encoders.
+    """
+    from src.data import features as module
+
+    monkeypatch.setattr(module, "_versions", lambda: {"transformers": "5.22.0"})
+    FeatureCache(tmp_path, "train").save(
+        image_features=torch.randn(2, 8),
+        text_features=torch.randn(2, 8),
+        labels=torch.zeros(2, dtype=torch.long),
+        uids=["a", "b"],
+        encoder="openai/clip-vit-large-patch14",
+    )
+
+    monkeypatch.setattr(module, "_versions", lambda: {"transformers": "4.57.6"})
+    with pytest.raises(CacheMismatch, match="transformers 5.x"):
+        FeatureDataset(tmp_path, "train", "openai/clip-vit-large-patch14")
+
+
+def test_the_same_major_with_a_different_minor_is_fine(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Only the major boundary was measured to matter; do not refuse more."""
+    from src.data import features as module
+
+    monkeypatch.setattr(module, "_versions", lambda: {"transformers": "4.40.0"})
+    FeatureCache(tmp_path, "train").save(
+        image_features=torch.randn(2, 8),
+        text_features=torch.randn(2, 8),
+        labels=torch.zeros(2, dtype=torch.long),
+        uids=["a", "b"],
+        encoder="openai/clip-vit-large-patch14",
+    )
+
+    monkeypatch.setattr(module, "_versions", lambda: {"transformers": "4.57.6"})
+    assert len(FeatureDataset(tmp_path, "train", "openai/clip-vit-large-patch14")) == 2

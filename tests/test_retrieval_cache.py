@@ -101,3 +101,39 @@ def test_a_partial_write_leaves_no_usable_cache(tmp_path: Path) -> None:
     save(path, torch.randn(2, 8), ["a", "b"], ENCODER)
     assert path.exists()
     assert not path.with_suffix(".tmp").exists()
+
+
+def test_an_image_cache_from_another_transformers_major_is_refused(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The cached half is the image half, which is exactly the half that moved.
+
+    Measured at up to 7.1e-02 on a feature scale of 11.4 between 4.57.6 and
+    5.22.0: the default image processor changed from slow PIL to fast
+    torchvision. Reusing such a cache would put two preprocessing pipelines
+    into one retrieval table.
+    """
+    from src.data import features
+
+    path = cache_path(tmp_path, "clip-b32", 2)
+    monkeypatch.setattr(features, "_versions", lambda: {"transformers": "5.22.0"})
+    save(path, torch.randn(2, 8), ["a", "b"], ENCODER)
+
+    monkeypatch.setattr(features, "_versions", lambda: {"transformers": "4.57.6"})
+    with pytest.raises(RetrievalCacheError, match="transformers 5.x"):
+        load(path, ["a", "b"], ENCODER)
+
+
+def test_the_same_transformers_major_is_reused(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from src.data import features
+
+    path = cache_path(tmp_path, "clip-b32", 2)
+    monkeypatch.setattr(features, "_versions", lambda: {"transformers": "4.40.0"})
+    features_tensor = torch.randn(2, 8)
+    save(path, features_tensor, ["a", "b"], ENCODER)
+
+    monkeypatch.setattr(features, "_versions", lambda: {"transformers": "4.57.6"})
+    loaded = load(path, ["a", "b"], ENCODER)
+    assert loaded is not None and torch.equal(loaded, features_tensor)

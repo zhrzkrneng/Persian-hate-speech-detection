@@ -50,8 +50,15 @@ def save(path: Path, features: torch.Tensor, keys: list[str], encoder: str) -> N
         )
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_suffix(".tmp")
+    from .features import _versions
+
     torch.save(
-        {"features": features, "keys": list(keys), "encoder": encoder},
+        {
+            "features": features,
+            "keys": list(keys),
+            "encoder": encoder,
+            "versions": _versions(),
+        },
         temporary,
     )
     temporary.replace(path)
@@ -67,7 +74,23 @@ def load(path: Path, keys: list[str], encoder: str) -> torch.Tensor | None:
     if not path.exists():
         return None
 
+    from .features import _major, _versions
+
     payload = torch.load(path, map_location="cpu", weights_only=False)
+
+    # Image features differ across the transformers major boundary, measured at
+    # up to 7.1e-02 on a feature scale of 11.4, because the default image
+    # processor changed. A cached image pass from the other side of it would
+    # silently mix two preprocessing pipelines into one retrieval table.
+    cached_major = _major((payload.get("versions") or {}).get("transformers"))
+    running_major = _major(_versions().get("transformers"))
+    if cached_major and running_major and cached_major != running_major:
+        raise RetrievalCacheError(
+            f"{path} was encoded under transformers {cached_major}.x and this "
+            f"run has {running_major}.x; the default image processor differs, "
+            "so delete it and re-encode rather than reusing it."
+        )
+
     recorded = payload.get("encoder")
     if recorded != encoder:
         raise RetrievalCacheError(

@@ -36,6 +36,7 @@ from PIL import Image  # noqa: E402
 from tqdm import tqdm  # noqa: E402
 
 from src.config import EncoderConfig  # noqa: E402
+from src.data.features import _versions  # noqa: E402
 from src.data.retrieval_cache import cache_path, load, save  # noqa: E402
 from src.data.xm3600 import Crossmodal3600  # noqa: E402
 from src.utils.device import resolve_device  # noqa: E402
@@ -184,6 +185,12 @@ def run(
         "images": len(records),
         "captions": len(texts),
         "results": results,
+        # The transformers version changes image features -- 5.x resizes with
+        # the fast torchvision processor where 4.x uses the slow PIL one -- so
+        # a retrieval score is only comparable with another taken under the
+        # same major version. It was not recorded here once, and a table ended
+        # up holding rows from both.
+        "versions": _versions(),
     }
 
 
