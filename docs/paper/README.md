@@ -8,67 +8,78 @@ mechanical and happens once the content settles.
 
 ## Written
 
-| section | file | depends on |
+| section | file | basis |
 | --- | --- | --- |
-| Method, experimental setup, reproducibility | `method.md` | the code only — every number in it is computed from the repository |
+| Method, experimental setup, reproducibility | `method.md` | the code — every number in it is computed from the repository |
+| Results on HMC | `results.md` | `runs/`, with every comparison from `scripts/compare_cells.py` |
+| Related work | `related-work.md` | reading, with five claims still ⚠️ unverified (below) |
 
-## Not written, and why
+## The result, in one paragraph
 
-**Results, discussion, abstract, introduction, conclusion.** These wait on one
-experiment, for a reason worth stating rather than working around.
+The encoder choice dominates: CLIP ViT-L/14 beats jina-clip-v2 by 1.9 to 2.9
+AUROC on English, on all ten paired runs, *p* < 0.001. The benefit of align
+fusion over concatenation **depends on the encoder** — it is +0.98 AUROC larger
+on CLIP than on jina-clip-v2, *p* = 0.006 — and that interaction is the claim,
+because neither fusion comparison reaches significance on its own. The encoder
+gap is wider under align (+2.89) than under concat (+1.91), so the multilingual
+encoder loses most where the fusion mechanism is supposed to contribute, which
+is the mechanism Hate-CLIPper's Limitations section proposes for Tamil,
+measured here on English. MemeCLIP's additions help over CLIP (+0.47) and hurt
+over jina (−1.33): the sign flips with the encoder.
 
-On jina-clip-v2 features, align fusion gives no advantage over plain
-concatenation. Paired across five seeds:
+Bounding all of it: this pipeline reaches 82.09 where Hate-CLIPper reports
+85.8, so the qualitative effect reproduces and the absolute level does not.
+Only within-pipeline comparisons are claimed.
 
-```
-dim 1024   align − concat   mean −0.26   sd 0.38
-dim  256   align − concat   mean −0.05   sd 0.89
-```
+## Not written
 
-And the best number so far, 79.46 ± 0.27 test AUROC, sits 6.3 points below
-Hate-CLIPper's published 85.8 on the same split.
+**Abstract, introduction, conclusion.** These are the sections that state the
+contribution, and the contribution is not complete: the Persian evaluation set
+is the data contribution, and it does not exist yet. Writing an abstract around
+the HMC result alone would describe a different, smaller paper than the one
+being built. They are quick to write once the Persian numbers exist.
 
-Both observations have two readings, and nothing collected so far separates
-them:
-
-1. **jina-clip-v2's feature space removes the fusion advantage.** This would be
-   a finding, and a direct extension of Hate-CLIPper's own Limitations section,
-   which reports exactly this on Tamil and attributes it to a feature space CLIP
-   never aligned for a language it had not seen. Here it would be happening on
-   *English* data, with an encoder that did see Persian — so the cost of
-   multilinguality would be showing up on the language the encoder is good at.
-2. **This pipeline does not reproduce the fusion effect at all.** That would be
-   a defect in our work, and every number in it would be uninterpretable.
-
-The experiment that separates them is the CLIP ViT-L/14 control: the same
-pipeline, the same splits, the same budget, the other encoder. If CLIP-align
-beats CLIP-concat and lands near 85.8, reading 1 holds. If CLIP behaves like
-jina, reading 2 holds and the pipeline needs fixing before anything is written.
-
-Writing a results section before that would mean writing it twice, and worse,
-risks fixing a narrative in place before the evidence that decides it exists.
+**The Persian results section.** Waiting on collection and annotation, which
+need people. See `docs/collection-protocol.md`.
 
 ## Status of the experiments
 
-| cell | seeds | status |
+| cell | seeds | test AUROC |
 | --- | --- | --- |
-| jina · Hate-CLIPper · align · n=1024 | 5 | done, 79.20 ± 0.52 |
-| jina · Hate-CLIPper · concat · n=1024 | 5 | done, 79.46 ± 0.27 |
-| jina · MemeCLIP · align · n=1024 | 5 | done, 77.88 ± 0.51 |
-| jina · Hate-CLIPper · concat · n=256 | 5 | done, 79.40 ± 0.66 |
-| jina · Hate-CLIPper · align · n=256 | 5 | done, 79.35 ± 0.40 |
-| jina · Hate-CLIPper · cross · n=256 | 0 | deferred — ~67M trainable parameters, hours per seed on 4 CPU cores. Needs a GPU. If the final table ships without it, that has to be said, not left blank. |
-| CLIP · all four cells | 0 | waiting on feature extraction (~5 h CPU, in progress) |
+| CLIP · Hate-CLIPper · concat · n=1024 | 5 | 81.37 ± 0.28 |
+| CLIP · Hate-CLIPper · align · n=1024 | 5 | 82.09 ± 0.39 |
+| CLIP · MemeCLIP · align · n=1024 | 5 | 82.56 ± 0.59 |
+| jina · Hate-CLIPper · concat · n=1024 | 5 | 79.46 ± 0.27 |
+| jina · Hate-CLIPper · align · n=1024 | 5 | 79.20 ± 0.52 |
+| jina · MemeCLIP · align · n=1024 | 5 | 77.88 ± 0.51 |
+| jina · Hate-CLIPper · concat · n=256 | 5 | 79.40 ± 0.66 |
+| jina · Hate-CLIPper · align · n=256 | 5 | 79.35 ± 0.40 |
+| jina · Hate-CLIPper · cross · n=256 | 0 | **not run** — 67.6M trainable parameters, hours per seed on four CPU cores. Needs a GPU. Reported as absent in `results.md` §5, not left blank. |
+| CLIP · Hate-CLIPper · cross | 0 | same, and at n=1024 it would not fit a free GPU at all |
 
-Retrieval numbers in `runs/retrieval/` were measured on a subset of
-Crossmodal-3600. The final table should be rerun over all 3,600 images on a
-GPU; the subset is enough to have chosen an encoder, not to be a published
-number.
+Retrieval numbers in `runs/retrieval/` were measured on a 1,000-image subset of
+Crossmodal-3600. Enough to have chosen an encoder on evidence; the published
+table should be rerun over all 3,600 on a GPU.
 
-## Claims needing verification before submission
+## Before submission
 
-`docs/related-work.md` carries ⚠️ markers on every claim taken from a secondary
-source. Those are to be checked against the primary source, not promoted by
-being repeated. The "no public Persian multimodal hate speech dataset" claim in
-particular must be hedged to "to the best of our knowledge" — absence is not
-something a literature search can establish.
+**Five claims still need a primary source.** `docs/related-work.md` marks each
+⚠️. They cannot be checked from this session: `arxiv.org` and `aclanthology.org`
+are outside the environment's allowed network domains.
+
+| claim | what is needed |
+| --- | --- |
+| ISSUES's reported AUROC | the number from the paper; a secondary source gives ~0.86 and marks it unverified |
+| RGCL's publication venue | the search did not confirm it |
+| MUTE / ExMute figures, shared-task macro F1 | from the papers, not from search results |
+| ParsHate's exact scope and size | not independently verified |
+| "no public Persian multimodal hate speech dataset" | **hedge to "to the best of our knowledge"** — absence is not something a literature search establishes |
+
+**One wording inconsistency to settle:** `related-work.md` describes the
+retrieval measurement as "1000 images" and `results.md` §5 calls it a subset of
+Crossmodal-3600. Both are true; the paper should use one phrasing.
+
+**Two licence conditions must appear in the paper**, not only in the repository:
+jina-clip-v2 is CC BY-NC 4.0, research use and not commercial, and it requires
+`trust_remote_code=True`, which executes code downloaded from its model
+repository.
