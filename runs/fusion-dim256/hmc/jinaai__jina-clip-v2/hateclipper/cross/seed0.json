@@ -1,0 +1,16 @@
+{
+  "encoder": "jinaai/jina-clip-v2",
+  "architecture": "hateclipper",
+  "fusion": "cross",
+  "seed": 0,
+  "val": {
+    "auroc": 0.7750556080075531,
+    "accuracy": 0.662,
+    "macro_f1": 0.6431211065357407
+  },
+  "test": {
+    "auroc": 0.7834093637454982,
+    "accuracy": 0.685,
+    "macro_f1": 0.6669172717669563
+  }
+}
