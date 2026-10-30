@@ -29,46 +29,56 @@ import argparse
 import json
 import statistics as st
 import sys
+from itertools import combinations
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 HMC = Path("runs/hmc")
 CLIP = "openai__clip-vit-large-patch14"
+B32 = "openai__clip-vit-base-patch32"
 JINA = "jinaai__jina-clip-v2"
+CLIPFA = "CLIPfa"
+
+# Every encoder on the axis, in the order the paper's table uses.
+ENCODERS = {
+    "CLIP ViT-L/14": CLIP,
+    "CLIP ViT-B/32": B32,
+    "jina-clip-v2": JINA,
+    "CLIPfa": CLIPFA,
+}
 
 # The comparisons the paper makes, so the table and the prose cannot diverge.
 COMPARISONS = [
-    (
-        "fusion: align - concat, CLIP",
-        f"{CLIP}/hateclipper/align",
-        f"{CLIP}/hateclipper/concat",
-    ),
-    (
-        "fusion: align - concat, jina",
-        f"{JINA}/hateclipper/align",
-        f"{JINA}/hateclipper/concat",
-    ),
-    (
-        "encoder: CLIP - jina, under align",
-        f"{CLIP}/hateclipper/align",
-        f"{JINA}/hateclipper/align",
-    ),
-    (
-        "encoder: CLIP - jina, under concat",
-        f"{CLIP}/hateclipper/concat",
-        f"{JINA}/hateclipper/concat",
-    ),
-    (
-        "architecture: MemeCLIP - HateCLIPper, CLIP",
-        f"{CLIP}/memeclip/align",
-        f"{CLIP}/hateclipper/align",
-    ),
-    (
-        "architecture: MemeCLIP - HateCLIPper, jina",
-        f"{JINA}/memeclip/align",
-        f"{JINA}/hateclipper/align",
-    ),
+    *[
+        (
+            f"fusion: align - concat, {label}",
+            f"{slug}/hateclipper/align",
+            f"{slug}/hateclipper/concat",
+        )
+        for label, slug in ENCODERS.items()
+    ],
+    *[
+        (
+            f"architecture: MemeCLIP - HateCLIPper, {label}",
+            f"{slug}/memeclip/align",
+            f"{slug}/hateclipper/align",
+        )
+        for label, slug in ENCODERS.items()
+    ],
+    # Which encoder reaches the higher score, which is a different question
+    # from how much fusion buys it -- and the two answers disagree, which is
+    # the point: CLIP ViT-B/32 scores below jina-clip-v2 and gains more from
+    # fusion than jina does.
+    *[
+        (
+            f"encoder: {left} - {right}, under {fusion}",
+            f"{ENCODERS[left]}/hateclipper/{fusion}",
+            f"{ENCODERS[right]}/hateclipper/{fusion}",
+        )
+        for fusion in ("align", "concat")
+        for left, right in combinations(ENCODERS, 2)
+    ],
 ]
 
 
@@ -135,19 +145,30 @@ def main() -> None:
             if label.startswith("fusion"):
                 fusion[label.split(", ")[-1]] = diffs
 
-        # The claim is not either fusion benefit on its own but whether the
-        # benefit depends on the encoder. Differencing the two differences
-        # cancels the seed noise they share, which is why this is the
-        # comparison that resolves while neither of its halves does.
-        if {"CLIP", "jina"} <= fusion.keys():
+        # The claim is not any one fusion benefit but whether the benefit
+        # depends on the encoder. Differencing two differences cancels the seed
+        # noise they share, which is why an interaction can resolve while
+        # neither of its halves does.
+        #
+        # The pair that matters most is the two CLIP variants. They differ by
+        # about three and a half points of absolute AUROC, so if the fusion
+        # benefit tracked model capacity they would differ here too. Finding
+        # that they do not, while both differ from the other two encoders, is
+        # what separates "the feature space decides" from "the stronger model
+        # decides".
+        print("INTERACTIONS: does the fusion benefit differ between encoders?\n")
+        for left, right in combinations(ENCODERS, 2):
+            if not {left, right} <= fusion.keys():
+                continue
             interaction = [
-                c - j for c, j in zip(fusion["CLIP"], fusion["jina"], strict=True)
+                a - b for a, b in zip(fusion[left], fusion[right], strict=True)
             ]
             report(
-                "INTERACTION: fusion benefit, CLIP - jina",
+                f"{left} - {right}",
                 interaction,
                 sorted(read_cell(HMC / COMPARISONS[0][1], args.split)),
             )
+            print()
         return
 
     if not (args.a and args.b):
