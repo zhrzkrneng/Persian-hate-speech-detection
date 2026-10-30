@@ -1,0 +1,53 @@
+# CLIPfa features, align head.
+#
+# Part of the encoder axis: the finding this project reports is that the
+# benefit of align fusion depends on the encoder, and two encoders make that
+# an interaction between two points. Four make it a trend, and the
+# Crossmodal-3600 retrieval scores give each encoder a measured position on a
+# Persian-alignment axis to place it against.
+#
+# Everything except the encoder matches configs/hmc_align.yaml, so a
+# difference between two rows of the table is the thing named in the row.
+
+# CLIPfa ships as two separately published models -- a Persian RoBERTa text
+# tower and a CLIP vision tower, trained together and released apart -- so
+# `name` is only a label and the two towers are named below. It is the mirror
+# image of CLIP ViT-L/14 on the retrieval axis: 36.90 R@1 on Persian against
+# 0.20 on English, where CLIP ViT-L/14 scores 60.05 and 0.15. A
+# language-specialised encoder loses the other language, which is what makes
+# the pair a control: the axis is language coverage, not model quality.
+encoder:
+  name: CLIPfa
+  kind: dual_tower
+  text_model: SajjadAyoubi/clip-fa-text
+  vision_model: SajjadAyoubi/clip-fa-vision
+  max_text_length: 512
+  batch_size: 64
+
+model:
+  architecture: hateclipper
+  fusion: align
+  projection_dim: 1024
+  pre_output_dim: 1024
+  num_pre_output_layers: 1
+  dropout: 0.1
+  num_classes: 2
+
+train:
+  epochs: 20
+  batch_size: 64
+  learning_rate: 0.0001
+  weight_decay: 0.0001
+  grad_clip: 0.1
+  seed: 0
+  device: auto
+
+data:
+  name: hmc
+  root: data/hmc
+  feature_root: features
+  train_split: train
+  val_split: dev_seen
+  test_split: test_seen
+
+output_dir: runs
