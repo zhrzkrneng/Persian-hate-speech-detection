@@ -21,8 +21,13 @@ const front = [
   }),
   new Paragraph({
     bidirectional: true, alignment: AlignmentType.CENTER,
+    spacing: { after: 60 },
+    children: [new TextRun(fa("زهره ذاکران", { size: SIZE.authors }))],
+  }),
+  new Paragraph({
+    bidirectional: true, alignment: AlignmentType.CENTER,
     spacing: { after: 240 },
-    children: [new TextRun(fa("«نام و نام خانوادگی نویسنده»", { size: SIZE.authors }))],
+    children: [new TextRun(en("zhrzkrn.eng@gmail.com", { size: SIZE.authors }))],
   }),
 ];
 
