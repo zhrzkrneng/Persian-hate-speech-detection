@@ -81,10 +81,18 @@ class Config:
     output_dir: Path = Path("runs")
 
     @property
+    def encoder_slug(self) -> str:
+        """The encoder's id as one path component.
+
+        One function, used by both the feature cache and the result path, so
+        the two can never disagree about which directory an encoder owns.
+        """
+        return self.encoder.name.replace("/", "__")
+
+    @property
     def feature_dir(self) -> Path:
         """Cache location, keyed by encoder so variants never collide."""
-        slug = self.encoder.name.replace("/", "__")
-        return self.data.feature_root / self.data.name / slug
+        return self.data.feature_root / self.data.name / self.encoder_slug
 
 
 def _build(cls: type, values: dict[str, Any]) -> Any:

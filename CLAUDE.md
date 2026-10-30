@@ -74,6 +74,26 @@ encoders can never share one. The reference MemeCLIP implementation re-encodes
 every batch of every epoch, one image at a time; that is the cost this design
 exists to avoid.
 
+**A cache file says what produced it.** Keying the directory by encoder is
+protection only until a file is moved, copied or re-downloaded, and these
+caches are built on one machine and trained on on another. `FeatureCache`
+records the encoder, the split, the count, the feature width, the time and the
+torch and transformers versions, and training refuses a cache whose recorded
+encoder disagrees with the config. A cache from before this field is read with
+a note, not refused: the first real results came from one.
+
+**Split sizes matching is not a verified copy.** Three HMC mirrors were
+checked against the published split sizes and passed. The images were never
+counted: `neuralcatcher` and `luyuxin2026` each ship 9664 images while their
+own JSONL files reference 12140 ids, so 2043 of the 10000 that
+train/dev_seen/test_seen need are simply absent, and `snapshot_download`
+reports success. Training on it would have succeeded on 7957 of 10000 memes
+and produced a number comparable with nothing. `check_hmc` catches it because
+it checks referenced images, not just row counts. The gap is fillable from
+`limjiayi/hateful_memes_expanded`, whose files differ byte for byte -- PNG
+compression -- but decode to identical pixels, which is what makes mixing the
+two safe and is checked on a sample before any fetch.
+
 **Result directories are keyed by architecture *and* fusion.** MemeCLIP also
 fuses by element-wise product, so keying on fusion alone let one architecture
 silently overwrite the other's results.
@@ -85,6 +105,16 @@ and nothing else. Importing `src/encoders.py` for a helper pulled in
 **CI installs a subset of `requirements.txt`.** A third-party import added to
 `src/` that is not in the workflow's install list fails only in CI.
 `tests/test_imports.py` exists to make that failure name itself.
+
+**The floor is Python 3.10, and this machine cannot check that.** CI runs 3.10
+and 3.12; the cloud session runs 3.13. A 3.11-or-later standard library API
+therefore passes `ruff` and the whole test suite locally and fails only in CI,
+where it breaks *collection* rather than one test: `from datetime import UTC`
+in `src/data/features.py` took out every test module that imports it, however
+indirectly. `ruff`'s `target-version = "py310"` does not catch this -- its
+pyupgrade rules suggest modernising up to the target, they do not flag
+reaching past it. So prefer the older spelling (`datetime.now(timezone.utc)`)
+and, for anything newer, check the version it was added in before pushing.
 
 ## Environment facts
 
