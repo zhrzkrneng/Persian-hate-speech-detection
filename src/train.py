@@ -25,9 +25,13 @@ from .utils.seed import set_seed
 
 def build_loaders(config: Config) -> tuple[DataLoader, DataLoader, DataLoader, int]:
     directory = config.feature_dir
-    train_set = FeatureDataset(directory, config.data.train_split)
-    val_set = FeatureDataset(directory, config.data.val_split)
-    test_set = FeatureDataset(directory, config.data.test_split)
+    # The encoder name is passed so a cache that records a different one is
+    # refused rather than trained on. The path alone is not evidence: these
+    # files are built on one machine and trained on on another.
+    expect = config.encoder.name
+    train_set = FeatureDataset(directory, config.data.train_split, expect)
+    val_set = FeatureDataset(directory, config.data.val_split, expect)
+    test_set = FeatureDataset(directory, config.data.test_split, expect)
 
     common = {
         "batch_size": config.train.batch_size,
