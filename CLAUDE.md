@@ -59,6 +59,17 @@ named a different meme than the annotators had discussed. Rows are matched by
 image hash, ids are never reassigned, and a row whose image has gone missing
 is reported rather than dropped.
 
+**Not every cache may be backed up, so a backup names datasets and never a
+directory.** The Hateful Memes feature caches live on a private Kaggle dataset,
+which that corpus's click-through licence permits as storage. Multi3Hate is
+CC BY-NC-ND 4.0 -- no distribution of adapted material, and an encoded copy of
+its images is adapted material -- so its caches may not be copied off this
+machine at all, not even privately. Both sit under `features/`, which is
+gitignored, so the risk is not a commit: it is a backup command written to
+sweep `features/`, which would have taken both. `features/multi3hate/` is
+separate from `features/hmc/` for that reason. Reporting a measurement made
+from those features is not distributing them.
+
 **Provenance is recorded at collection time, not after.** The platform and the
 collection date are not recoverable from a folder of images, and no one
 reconstructs three hundred of them from memory. `data/persian/sources.csv`
@@ -151,6 +162,16 @@ reaching past it. So prefer the older spelling (`datetime.now(timezone.utc)`)
 and, for anything newer, check the version it was added in before pushing.
 
 ## Environment facts
+
+- **Three of this session's own measurement tools have returned false
+  negatives, each costing real time.** `| head -3` truncated a listing into "the
+  Kaggle token is gone" and bought two hours of CPU instead of GPU. `pgrep -q`
+  is unsupported here and printed "PROCESS GONE" for a live process. `pgrep -f`
+  matched nothing for a `python -m src.train` that `ps aux | grep` found
+  immediately, which read as a dead sweep. Before reporting that something has
+  stopped, confirm it a second way -- `ps aux | grep -E '[p]attern'` and the
+  job's own output file -- because "it died" and "my check is wrong" look
+  identical from one command.
 
 - No GPU in the cloud session. A full Crossmodal-3600 run takes hours on CPU
   here and minutes on a free Colab or Kaggle GPU. Develop and verify here; run
