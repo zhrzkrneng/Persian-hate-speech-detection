@@ -47,16 +47,31 @@ PrideMM, 5,063 text-embedded images annotated for hate, target, stance and
 humour.
 
 Two stronger methods bound what the simple CLIP-plus-head family can claim.
-⚠️ ISSUES [Burbi et al., ICCV 2023 Workshops] pairs CLIP with textual
-inversion, mapping the image into a pseudo-word token so that the meme's
-combined meaning lives in the text space. ⚠️ RGCL [Mei et al.] retrieves
-similar examples during training and adds a contrastive objective, reporting
-87.0 AUROC and 78.8 accuracy on HMC and beating Flamingo-80B at 86.6 with a
-fraction of the parameters.
+ISSUES [Burbi, Baldrati, Agnolucci, Bertini & Del Bimbo, *Mapping Memes to
+Words for Multimodal Hateful Meme Classification*, ICCV 2023 CLVL Workshop]
+pairs CLIP with textual inversion, mapping the image into a pseudo-word token
+so that the meme's combined meaning lives in the text space. Code at
+`github.com/miccunifi/ISSUES`.
 
-> ⚠️ Verify: ISSUES's reported AUROC (a secondary source gives ~0.86 but marks
-> it unverified) and RGCL's publication venue, which the search did not
-> confirm.
+RGCL [Mei, Chen, Lin, Byrne & Tomalin, *Improving Hateful Meme Detection
+through Retrieval-Guided Contrastive Learning*, arXiv:2311.08110, November
+2023] retrieves similar examples during training and adds a contrastive
+objective. Its abstract states, verbatim, "state-of-the-art performance on the
+HatefulMemes dataset with an AUROC of 87.0, outperforming much larger
+fine-tuned large multimodal models". Project page: `rgclmm.github.io`.
+
+> ⚠️ Still unverified, and the three are not the same kind of gap:
+>
+> - **ISSUES's numeric AUROC.** Two aggregators give 0.855 and 0.86; both are
+>   secondary and one marks itself unverified. The CVF proceedings page is the
+>   primary source and is unreachable from this environment. Either read it or
+>   cite ISSUES without a number.
+> - **RGCL's venue.** The paper's own metadata gives arXiv and a project page,
+>   no venue. Cite the arXiv entry unless a published version is confirmed.
+> - **RGCL's 78.8 accuracy and the Flamingo-80B 86.6 comparison.** The abstract
+>   confirms 87.0 AUROC and that it outperforms "much larger fine-tuned large
+>   multimodal models", but neither of those two numbers. Drop them or read the
+>   paper's table.
 
 **Where this leaves us.** Hate-CLIPper and MemeCLIP are the right base and
 control for a low-resource study: frozen encoders, a few million trainable
@@ -86,16 +101,37 @@ changes.
 ⚠️ Work on other low-resource languages converges on the same recipe — a CLIP
 vision tower with a language-specific or multilingual text encoder. Bengali
 has MUTE and its extension ExMute; shared-task systems for Bengali, Hindi,
-Gujarati, Bodo and Nepali report macro F1 around 0.6. Persian has neither a
-meme dataset nor, as far as we can establish, a published multimodal hate
-speech resource of any kind. ⚠️ Persian text-only hate speech is covered by
-ParsHate.
+Gujarati, Bodo and Nepali report macro F1 around 0.6.
 
-> ⚠️ Verify: the MUTE/ExMute figures, the shared-task F1 scores, and ParsHate's
-> exact scope and size. The claim that no Persian multimodal hate speech
-> dataset exists rests on a literature search, not on an exhaustive review —
-> soften it to "to the best of our knowledge" and search ACL Anthology, arXiv
-> and Persian-language venues once more before submitting.
+**Persian text-only hate speech is well served, and that is the contrast.**
+ParsHate [Bokaei, Magdy & Webber, arXiv:2609.16393, September 2026] is a
+manually annotated set of **10,000 Persian tweets spanning 2013–2022, 31%
+hateful**, with multi-label target identification over **seven** target
+categories, an explicit/implicit distinction, span-level rationales, and
+score-stratified temporal sampling. State-of-the-art Persian models reach 79%
+F1 on hate detection and only 25.5% macro F1 on target identification. Its
+schema is close enough to this project's that the two are directly comparable:
+seven targets and the explicit/implicit split are the same choices, made
+independently. Other Persian text resources include PHate (multi-label, with
+annotator rationales), PHOND (with a user following network) and PHICAD
+(Instagram comments).
+
+**To the best of our knowledge there is no Persian multimodal hateful meme
+dataset.** A search of the Hugging Face Hub (datasets matching "persian meme",
+"farsi meme", "persian multimodal"), Kaggle, and the web returned none. The
+nearest multimodal meme hate dataset in a Perso-Arabic script is **Arabic**:
+M3 [`mira-ai-lab/M3`] pairs 2,455 meme images with their posts across X, 4chan
+and Weibo, with binary hate labels and eight fine-grained categories, and its
+README states it "spans English, Chinese, and Arabic content" — Persian is not
+among them. The closest Persian multimodal resource is MPerSocial
+[`mebasiri/Multimodal-Persian-Sentiment-Analysis`], image–text pairs from
+Instagram and Telegram annotated for **sentiment**, not hate.
+
+> ⚠️ Still to verify: the MUTE/ExMute figures and the shared-task F1 scores,
+> which come from search results rather than from the papers. The absence
+> claim above is hedged on purpose: a literature search cannot establish that
+> nothing exists, and it should be re-run against ACL Anthology and
+> Persian-language venues before submission.
 
 ## 3. Whose labels?
 
@@ -149,8 +185,11 @@ under that encoder.
 | Multi3Hate: 300 memes, 74% / 67%, α 0.39–0.47, VLM alignment | read in the paper |
 | Crossmodal-3600: 3600 images, 36 languages, native-speaker captions | read in the paper and the data |
 | Our own retrieval numbers | measured in this repository |
-| ISSUES AUROC | ⚠️ secondary source, unverified |
-| RGCL venue | ⚠️ unconfirmed |
+| ISSUES venue and authors | ✅ ICCV 2023 CLVL Workshop, from the CVF proceedings listing |
+| ISSUES AUROC | ⚠️ aggregators give 0.855 and 0.86; CVF page unreachable from this environment |
+| RGCL AUROC 87.0 | ✅ quoted verbatim from the paper's own abstract |
+| RGCL venue | ⚠️ its metadata gives arXiv:2311.08110 and a project page, no venue |
+| RGCL accuracy 78.8 and Flamingo-80B 86.6 | ⚠️ not in the abstract; drop or read the table |
 | MUTE / ExMute / shared-task F1 | ⚠️ search results only |
-| ParsHate scope and size | ⚠️ not independently verified |
-| "No Persian multimodal hate speech dataset" | ⚠️ search only — hedge it |
+| ParsHate scope and size | ✅ 10,000 tweets, 2013–2022, 31% hateful, 7 targets, from its abstract |
+| "No Persian multimodal hateful meme dataset" | ✅ hedged, with the search recorded and M3's Arabic coverage named |
