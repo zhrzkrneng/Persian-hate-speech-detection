@@ -103,19 +103,39 @@ The last command trains over five seeds and reports mean and standard deviation.
 Differences between fusion variants in the published tables are small enough that
 single-run numbers do not separate them.
 
+### Building the Persian set
+
+`docs/collection-protocol.md` has the scope decision and the commands for a
+collecting session; `docs/annotation-guideline.md` is the labelling protocol and
+`docs/annotation-guideline.fa.md` is the Persian version annotators read.
+
+```bash
+python -m scripts.prepare_memes --images data/persian/raw --init-manifest
+python -m scripts.prepare_memes --images data/persian/raw --dry-run
+python -m scripts.prepare_memes --images data/persian/raw \
+    --out data/persian/annotations.jsonl
+python -m scripts.check_annotations --file data/persian/annotations.jsonl
+```
+
+Annotation itself happens in `tools/annotate.html`, a single local page that
+loads nothing from the network. Running `prepare_memes` again after a later
+collecting session keeps every id, transcription and label already in the file.
+
 ## Layout
 
 ```
 configs/      experiment configs, one YAML per run
-scripts/      feature extraction, data checks, seed sweeps
+docs/         collection protocol, annotation guideline (en + fa), related work
+scripts/      feature extraction, data checks, seed sweeps, meme preparation
 src/
   encoders.py   pluggable vision-language encoders
-  data/         dataset readers and the cached-feature dataset
+  data/         dataset readers, the cached-feature dataset, collection tooling
   models/       fusion variants and the classification head
   train.py      training loop
   evaluate.py   evaluation and metric reporting
-  utils/        seeding, metrics
-tests/        unit tests for the fusion maths
+  utils/        seeding, metrics, annotator agreement
+tests/        unit tests
+tools/        annotate.html, the offline annotation page
 ```
 
 ## Licence
