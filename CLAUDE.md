@@ -82,6 +82,18 @@ torch and transformers versions, and training refuses a cache whose recorded
 encoder disagrees with the config. A cache from before this field is read with
 a note, not refused: the first real results came from one.
 
+**Long encoding runs write shards, because this container restarts without
+notice.** The cloud session was restarted mid-session and killed a CLIP
+ViT-L/14 extraction at batch 15 of 133, 37 minutes in, which left *nothing*:
+the cache was written once, after a whole split, and `train` is one split of
+8500. `extract_features` now writes a shard every `--shard-size` examples
+(default 1000) and resumes from whatever is on disk, so a restart costs the
+shard in flight. Shards record their encoder and must tile the split from 0
+with no gap -- half a split from each of two encoders, or shards left over
+from a different shard size, are refused rather than concatenated. A restart
+also kills every background job, so check for one before assuming a job is
+still running: `ps -o etime -p 1` shows the container's age.
+
 **Split sizes matching is not a verified copy.** Three HMC mirrors were
 checked against the published split sizes and passed. The images were never
 counted: `neuralcatcher` and `luyuxin2026` each ship 9664 images while their

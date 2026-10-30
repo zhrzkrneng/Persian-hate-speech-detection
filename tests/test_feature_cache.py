@@ -121,3 +121,81 @@ def test_mismatched_lengths_are_still_caught(tmp_path: Path) -> None:
 def test_a_missing_cache_says_how_to_build_one(tmp_path: Path) -> None:
     with pytest.raises(FileNotFoundError, match="extract_features"):
         FeatureDataset(tmp_path, "train", ENCODER)
+
+
+# ── resumable shards ─────────────────────────────────────────────────────
+
+
+def shard(directory: Path, start: int, n: int, encoder: str = ENCODER, split="train"):
+    from src.data.features import save_shard
+
+    return save_shard(
+        directory, split, start, torch.randn(n, 8), torch.randn(n, 8), encoder
+    )
+
+
+def test_shards_reload_in_order(tmp_path: Path) -> None:
+    from src.data.features import load_shards
+
+    shard(tmp_path, 1000, 500)  # written out of order on purpose
+    shard(tmp_path, 0, 1000)
+
+    found = load_shards(tmp_path, "train", ENCODER)
+    assert [s["start"] for s in found] == [0, 1000]
+    assert sum(s["count"] for s in found) == 1500
+
+
+def test_no_shards_means_start_from_zero(tmp_path: Path) -> None:
+    from src.data.features import load_shards
+
+    assert load_shards(tmp_path, "train", ENCODER) == []
+
+
+def test_a_shard_from_another_encoder_is_refused(tmp_path: Path) -> None:
+    """Half a split from each encoder would produce a plausible number."""
+    from src.data.features import ShardError, load_shards
+
+    shard(tmp_path, 0, 100)
+    shard(tmp_path, 100, 100, encoder="openai/clip-vit-large-patch14")
+    with pytest.raises(ShardError, match="not 'jinaai/jina-clip-v2'"):
+        load_shards(tmp_path, "train", ENCODER)
+
+
+def test_a_gap_between_shards_is_refused(tmp_path: Path) -> None:
+    """Happens when the shard size changes between runs."""
+    from src.data.features import ShardError, load_shards
+
+    shard(tmp_path, 0, 1000)
+    shard(tmp_path, 2000, 1000)
+    with pytest.raises(ShardError, match="do not tile from 0"):
+        load_shards(tmp_path, "train", ENCODER)
+
+
+def test_shards_of_one_split_do_not_disturb_another(tmp_path: Path) -> None:
+    from src.data.features import load_shards
+
+    shard(tmp_path, 0, 100, split="train")
+    shard(tmp_path, 0, 50, split="test_seen")
+
+    assert sum(s["count"] for s in load_shards(tmp_path, "train", ENCODER)) == 100
+    assert sum(s["count"] for s in load_shards(tmp_path, "test_seen", ENCODER)) == 50
+
+
+def test_clear_shards_removes_only_that_split(tmp_path: Path) -> None:
+    from src.data.features import clear_shards, load_shards
+
+    shard(tmp_path, 0, 100, split="train")
+    shard(tmp_path, 0, 50, split="test_seen")
+
+    assert clear_shards(tmp_path, "train") == 1
+    assert load_shards(tmp_path, "train", ENCODER) == []
+    assert len(load_shards(tmp_path, "test_seen", ENCODER)) == 1
+
+
+def test_a_finished_cache_is_not_a_shard(tmp_path: Path) -> None:
+    """clear_shards must never touch the cache the shards were built for."""
+    from src.data.features import clear_shards
+
+    write(tmp_path)
+    assert clear_shards(tmp_path, "train") == 0
+    assert (tmp_path / "train.pt").exists()
