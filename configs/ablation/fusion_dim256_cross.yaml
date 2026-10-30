@@ -1,0 +1,46 @@
+# Fusion ablation at projection_dim 256, over jina-clip-v2 features.
+#
+# Why a separate group instead of three more cells in the main table: cross
+# fusion builds the full n x n interaction matrix, so at n=1024 the first
+# classifier layer alone holds about 1.1B parameters and does not fit a free
+# GPU. Hate-CLIPper's own comparison needs all three variants at one
+# projection dim, and a cross run at 256 beside an align run at 1024 is not
+# that comparison. So every variant here runs at 256, and the group writes to
+# its own output_dir so the main table's paths stay untouched.
+#
+# Read these three against each other, never against the dim-1024 numbers.
+
+encoder:
+  name: jinaai/jina-clip-v2
+  kind: clip
+  trust_remote_code: true
+  max_text_length: 512
+  batch_size: 8
+
+model:
+  architecture: hateclipper
+  fusion: cross
+  projection_dim: 256
+  pre_output_dim: 1024
+  num_pre_output_layers: 1
+  dropout: 0.1
+  num_classes: 2
+
+train:
+  epochs: 20
+  batch_size: 64
+  learning_rate: 0.0001
+  weight_decay: 0.0001
+  grad_clip: 0.1
+  seed: 0
+  device: auto
+
+data:
+  name: hmc
+  root: data/hmc
+  feature_root: features
+  train_split: train
+  val_split: dev_seen
+  test_split: test_seen
+
+output_dir: runs/fusion-dim256

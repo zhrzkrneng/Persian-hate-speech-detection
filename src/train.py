@@ -25,9 +25,13 @@ from .utils.seed import set_seed
 
 def build_loaders(config: Config) -> tuple[DataLoader, DataLoader, DataLoader, int]:
     directory = config.feature_dir
-    train_set = FeatureDataset(directory, config.data.train_split)
-    val_set = FeatureDataset(directory, config.data.val_split)
-    test_set = FeatureDataset(directory, config.data.test_split)
+    # The encoder name is passed so a cache that records a different one is
+    # refused rather than trained on. The path alone is not evidence: these
+    # files are built on one machine and trained on on another.
+    expect = config.encoder.name
+    train_set = FeatureDataset(directory, config.data.train_split, expect)
+    val_set = FeatureDataset(directory, config.data.val_split, expect)
+    test_set = FeatureDataset(directory, config.data.test_split, expect)
 
     common = {
         "batch_size": config.train.batch_size,
@@ -108,13 +112,20 @@ def train(config: Config) -> dict[str, Metrics]:
 def result_dir(config: Config) -> Path:
     """Where this run's per-seed files live.
 
-    Keyed by architecture as well as fusion: memeclip also fuses by
-    element-wise product, so keying on fusion alone would let the two
-    architectures overwrite each other's results.
+    Keyed by the encoder as well as the architecture and the fusion. Each of
+    the three has already been learned the hard way:
+
+    - fusion alone let memeclip, which also fuses by element-wise product,
+      overwrite hateclipper's align results;
+    - leaving the encoder out would do the same across encoders, and the
+      encoder comparison is this project's contribution. CLIP's align run
+      would land on jina's five seed files and summarise would average
+      whichever happened to be there, with nothing in the output saying so.
     """
     return (
         config.output_dir
         / config.data.name
+        / config.encoder_slug
         / config.model.architecture
         / config.model.fusion
     )

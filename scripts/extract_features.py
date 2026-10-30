@@ -78,7 +78,7 @@ def run(config: Config, overwrite: bool) -> None:
         image_features, text_features, labels, uids = encode_split(
             encoder, split, config.encoder.batch_size
         )
-        cache.save(image_features, text_features, labels, uids)
+        cache.save(image_features, text_features, labels, uids, config.encoder.name)
         print(f"{name}: {len(uids)} examples -> {cache.path}")
 
 

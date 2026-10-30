@@ -50,11 +50,27 @@ def compute_metrics(labels: np.ndarray, probabilities: np.ndarray) -> Metrics:
 
 
 def summarise(runs: list[Metrics]) -> dict[str, tuple[float, float]]:
-    """Mean and population standard deviation of each metric across seeds."""
+    """Mean and sample standard deviation of each metric across seeds.
+
+    Sample, not population: ddof=1. Five seeds are a sample of the random
+    initialisations and data orders the method could have been run under, not
+    the population of them, so the unbiased estimate is the one that answers
+    "how much does this number move if I run it again".
+
+    The difference is not cosmetic at this n. With five seeds, ddof=0 reports
+    a spread sqrt(4/5) = 0.894 times the sample one, about 11% narrower, and it
+    is narrower in the direction that flatters: the comparisons this project
+    exists to make differ by well under a point of AUROC, so understating the
+    spread is what would make a difference look resolved when it is not.
+
+    A single run has no spread to estimate, and nan is the honest answer -- a
+    0.00 there would read as a result that never varies.
+    """
     if not runs:
         raise ValueError("no runs to summarise")
     summary = {}
     for key in ("auroc", "accuracy", "macro_f1"):
         values = np.array([getattr(run, key) for run in runs], dtype=float)
-        summary[key] = (float(np.nanmean(values)), float(np.nanstd(values)))
+        spread = float(np.nanstd(values, ddof=1)) if len(values) > 1 else float("nan")
+        summary[key] = (float(np.nanmean(values)), spread)
     return summary

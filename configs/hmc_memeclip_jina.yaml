@@ -1,0 +1,54 @@
+# MemeCLIP over jina-clip-v2 features.
+#
+# The numbers in runs/hmc/jinaai__jina-clip-v2/memeclip/align/ were first
+# produced by passing --architecture memeclip over the align config. That is
+# reproducible only if someone remembers the flag, so the setting lives in a
+# file: a result in this repository should be reproducible from a committed
+# config alone.
+#
+# Settings follow the authors' released configs.py (map_dim 1024, one mapping
+# layer, one pre-output layer, adapter ratio 0.2 with reduction 4, cosine
+# scale 30), with the training budget matched to the hateclipper runs rather
+# than to the reference run, so the comparison is between architectures and
+# not between budgets. MemeCLIP's fusion is torch.mul in its released code --
+# the same element-wise product as Hate-CLIPper's align variant -- so the
+# fusion field reads align here, and the architecture is what differs.
+
+encoder:
+  name: jinaai/jina-clip-v2
+  kind: clip
+  trust_remote_code: true
+  max_text_length: 512
+  batch_size: 8
+
+model:
+  architecture: memeclip
+  fusion: align
+  projection_dim: 1024
+  pre_output_dim: 1024
+  num_pre_output_layers: 1
+  dropout: 0.1
+  num_classes: 2
+  adapter_ratio: 0.2
+  adapter_reduction: 4
+  cosine_scale: 30.0
+  normalise_before_fusion: true
+
+train:
+  epochs: 20
+  batch_size: 64
+  learning_rate: 0.0001
+  weight_decay: 0.0001
+  grad_clip: 0.1
+  seed: 0
+  device: auto
+
+data:
+  name: hmc
+  root: data/hmc
+  feature_root: features
+  train_split: train
+  val_split: dev_seen
+  test_split: test_seen
+
+output_dir: runs
