@@ -1,0 +1,103 @@
+"""Sharing one image pass between languages, and refusing to when it is unsafe.
+
+Crossmodal-3600 captions the same images in every language, so the expensive
+image pass can be computed once per encoder. The saving is real -- on CPU the
+images are minutes and the captions are seconds -- and so is the failure it
+risks: features are matched to captions by row, so a cache built from a
+different set of images, or the same set in a different order, would compare
+every caption against the wrong image and still produce a plausible-looking
+recall.
+
+`Crossmodal3600` skips any image with no caption in the requested language, so
+a language with a gap really would produce a different list. That is the case
+these tests are about.
+"""
+
+from __future__ import annotations
+
+import sys
+from pathlib import Path
+
+import pytest
+import torch
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from src.data.retrieval_cache import (  # noqa: E402
+    RetrievalCacheError,
+    cache_path,
+    load,
+    save,
+)
+
+ENCODER = "openai/clip-vit-base-patch32"
+
+
+def test_nothing_cached_yet_is_not_an_error(tmp_path: Path) -> None:
+    assert load(tmp_path / "absent.pt", ["a", "b"], ENCODER) is None
+
+
+def test_a_cache_round_trips(tmp_path: Path) -> None:
+    path = cache_path(tmp_path, "clip-b32", 2)
+    features = torch.randn(2, 8)
+    save(path, features, ["a", "b"], ENCODER)
+    loaded = load(path, ["a", "b"], ENCODER)
+    assert loaded is not None
+    assert torch.equal(loaded, features)
+
+
+def test_a_second_language_reuses_the_same_file(tmp_path: Path) -> None:
+    """The point of the whole module: the path does not mention the language."""
+    assert cache_path(tmp_path, "clip-b32", 1000) == cache_path(
+        tmp_path, "clip-b32", 1000
+    )
+
+
+def test_another_encoders_cache_is_refused(tmp_path: Path) -> None:
+    path = cache_path(tmp_path, "clip-b32", 2)
+    save(path, torch.randn(2, 8), ["a", "b"], ENCODER)
+    with pytest.raises(RetrievalCacheError, match="cannot stand in for"):
+        load(path, ["a", "b"], "jinaai/jina-clip-v2")
+
+
+def test_the_same_images_in_another_order_are_refused(tmp_path: Path) -> None:
+    """Reordering is the dangerous case: the count and the set both match."""
+    path = cache_path(tmp_path, "clip-b32", 3)
+    save(path, torch.randn(3, 8), ["a", "b", "c"], ENCODER)
+    with pytest.raises(RetrievalCacheError, match="different order"):
+        load(path, ["c", "b", "a"], ENCODER)
+
+
+def test_a_different_set_of_images_is_refused(tmp_path: Path) -> None:
+    path = cache_path(tmp_path, "clip-b32", 3)
+    save(path, torch.randn(3, 8), ["a", "b", "c"], ENCODER)
+    with pytest.raises(RetrievalCacheError, match="not the same set"):
+        load(path, ["a", "b", "d"], ENCODER)
+
+
+def test_a_different_count_is_a_different_file(tmp_path: Path) -> None:
+    """--limit 50 is how a quick check is run; it must not shadow the real one."""
+    small = cache_path(tmp_path, "clip-b32", 50)
+    full = cache_path(tmp_path, "clip-b32", 1000)
+    assert small != full
+    save(small, torch.randn(50, 8), [str(i) for i in range(50)], ENCODER)
+    assert load(full, [str(i) for i in range(1000)], ENCODER) is None
+
+
+def test_rows_and_keys_must_correspond_on_write(tmp_path: Path) -> None:
+    with pytest.raises(RetrievalCacheError, match="row for row"):
+        save(
+            cache_path(tmp_path, "clip-b32", 2), torch.randn(3, 8), ["a", "b"], ENCODER
+        )
+
+
+def test_a_partial_write_leaves_no_usable_cache(tmp_path: Path) -> None:
+    """Written to a temporary name and renamed, so a kill cannot leave half a file.
+
+    This container restarts without notice, which is why the HMC feature cache
+    writes shards; the same reasoning applies to a file written in one go.
+    """
+    path = cache_path(tmp_path, "clip-b32", 2)
+    save(path, torch.randn(2, 8), ["a", "b"], ENCODER)
+    assert path.exists()
+    assert not path.with_suffix(".tmp").exists()
