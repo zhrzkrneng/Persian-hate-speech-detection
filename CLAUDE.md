@@ -106,6 +106,16 @@ and nothing else. Importing `src/encoders.py` for a helper pulled in
 `src/` that is not in the workflow's install list fails only in CI.
 `tests/test_imports.py` exists to make that failure name itself.
 
+**The floor is Python 3.10, and this machine cannot check that.** CI runs 3.10
+and 3.12; the cloud session runs 3.13. A 3.11-or-later standard library API
+therefore passes `ruff` and the whole test suite locally and fails only in CI,
+where it breaks *collection* rather than one test: `from datetime import UTC`
+in `src/data/features.py` took out every test module that imports it, however
+indirectly. `ruff`'s `target-version = "py310"` does not catch this -- its
+pyupgrade rules suggest modernising up to the target, they do not flag
+reaching past it. So prefer the older spelling (`datetime.now(timezone.utc)`)
+and, for anything newer, check the version it was added in before pushing.
+
 ## Environment facts
 
 - No GPU in the cloud session. A full Crossmodal-3600 run takes hours on CPU

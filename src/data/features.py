@@ -26,7 +26,7 @@ training must not pull in an encoder.
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from importlib import metadata
 from pathlib import Path
 
@@ -80,7 +80,7 @@ class FeatureCache:
                     "split": self.split,
                     "count": len(uids),
                     "feature_dim": int(image_features.shape[1]),
-                    "written": datetime.now(UTC).isoformat(timespec="seconds"),
+                    "written": datetime.now(timezone.utc).isoformat(timespec="seconds"),
                     "versions": _versions(),
                 },
             },
