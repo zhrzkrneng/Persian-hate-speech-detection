@@ -26,11 +26,11 @@ from src.data.features import (  # noqa: E402
     save_shard,
 )
 from src.data.hmc import HatefulMemesSplit  # noqa: E402
-from src.encoders import FrozenEncoder, resolve_device  # noqa: E402
+from src.encoders import Encoder, build_encoder, resolve_device  # noqa: E402
 
 
 def encode_shard(
-    encoder: FrozenEncoder,
+    encoder: Encoder,
     split: HatefulMemesSplit,
     begin: int,
     end: int,
@@ -53,7 +53,7 @@ def encode_shard(
 
 
 def encode_split(
-    encoder: FrozenEncoder,
+    encoder: Encoder,
     split: HatefulMemesSplit,
     batch_size: int,
     directory: Path,
@@ -115,8 +115,15 @@ def encode_split(
 
 def run(config: Config, overwrite: bool, shard_size: int) -> None:
     device = resolve_device(config.train.device)
-    print(f"loading {config.encoder.name} on {device}")
-    encoder = FrozenEncoder(config.encoder, device)
+    print(f"loading {config.encoder.name} ({config.encoder.kind}) on {device}")
+    # build_encoder, not FrozenEncoder: the config's `kind` decides which
+    # encoder class to use, and this script ignored it. CLIPfa ships as two
+    # separately published towers, so its `name` is only a label and loading
+    # that label as a model id fails with "CLIPfa is not a local folder and is
+    # not a valid model identifier". scripts/eval_retrieval.py had always gone
+    # through build_encoder, which is why CLIPfa could be measured for
+    # retrieval but never encoded for classification.
+    encoder = build_encoder(config.encoder, device)
 
     splits = [
         config.data.train_split,
