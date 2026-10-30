@@ -163,6 +163,14 @@ and, for anything newer, check the version it was added in before pushing.
 
 ## Environment facts
 
+- **Run one heavy job at a time: two is slower than serial, not twice as
+  fast.** There are four cores, and torch defaults its thread pool to all of
+  them, so two python jobs ask for eight threads on four cores. A training run
+  that takes 1.5 minutes alone took 13 minutes beside a retrieval job -- an
+  8.7x slowdown for 2x the work, with load average at 8 -- and the retrieval
+  job was slower too. Measured on the same CLIPfa cells before and after
+  stopping the other job. Either serialise, or set `OMP_NUM_THREADS` so the
+  two together ask for four.
 - **Three of this session's own measurement tools have returned false
   negatives, each costing real time.** `| head -3` truncated a listing into "the
   Kaggle token is gone" and bought two hours of CPU instead of GPU. `pgrep -q`
