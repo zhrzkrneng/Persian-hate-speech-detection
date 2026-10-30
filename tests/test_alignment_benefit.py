@@ -142,3 +142,67 @@ def test_every_encoder_on_the_axis_has_a_retrieval_preset() -> None:
     """Otherwise its alignment would be read from a file nothing writes."""
     assert set(ab.ENCODERS) == set(PRESETS)
     assert set(ab.LABELS) == set(ab.ENCODERS)
+
+
+def test_a_line_held_up_by_one_extreme_point_is_called_out(capsys) -> None:
+    """The real shape of these four encoders, in miniature.
+
+    One point far from the rest gives a high Pearson r while the ordering of
+    the others does not follow it, so r looks like evidence for a linear trend
+    and is not. Quoting it would be the mistake; the script says so instead.
+    """
+    points = [
+        ab.Point("a", "A", "en", 0.2, 0.4, 1000, -1.5, 1.0, 0.03, [0, 1], 61.0, 62.6),
+        ab.Point("b", "B", "en", 58.8, 70.0, 1000, 0.8, 0.6, 0.03, [0, 1], 78.8, 78.0),
+        ab.Point("c", "C", "en", 60.1, 72.2, 1000, 0.7, 0.6, 0.06, [0, 1], 82.1, 81.4),
+        ab.Point("d", "D", "en", 70.3, 78.1, 1000, -0.3, 0.4, 0.20, [0, 1], 79.2, 79.5),
+    ]
+    out = ab.print_relationship(points)
+    linear = out["text -> image R@1"]
+    assert linear["pearson_r"] > 0.7
+    assert linear["spearman_rho"] < 0.5
+    printed = capsys.readouterr().out
+    assert "held up by an extreme point" in printed
+    assert "the shape is not monotone" in printed
+
+
+def test_an_honestly_linear_set_is_not_called_out(capsys) -> None:
+    """The warning has to stay quiet when the ordering does follow the line."""
+    points = [
+        ab.Point(c, c.upper(), "en", x, x, 1000, x / 10, 0.1, 0.03, [0, 1], 80.0, 79.0)
+        for c, x in (("a", 10.0), ("b", 30.0), ("c", 50.0), ("d", 70.0))
+    ]
+    ab.print_relationship(points)
+    assert "held up by an extreme point" not in capsys.readouterr().out
+
+
+def test_every_label_in_the_figure_is_tied_to_its_own_point(tmp_path: Path) -> None:
+    """A label moved aside once ended up beside its neighbour's point, so the
+    figure named the wrong encoder. Each label now carries a leader line."""
+    points = [
+        ab.Point("a", "A", "en", 58.8, 70.0, 1000, 0.8, 0.6, 0.03, [0, 1], 78.8, 78.0),
+        ab.Point("b", "B", "en", 60.1, 72.2, 1000, 0.7, 0.6, 0.06, [0, 1], 82.1, 81.4),
+        ab.Point("c", "C", "en", 70.3, 78.1, 1000, -0.3, 0.4, 0.20, [0, 1], 79.2, 79.5),
+    ]
+    path = tmp_path / "figure.png"
+    ab.draw(points, path)
+    assert path.exists() and path.stat().st_size > 0
+
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    figure = plt.gcf()
+    annotations = [
+        child
+        for axes in figure.axes
+        for child in axes.get_children()
+        if isinstance(child, matplotlib.text.Annotation)
+    ]
+    assert {a.get_text() for a in annotations} == {"A", "B", "C"}
+    for annotation in annotations:
+        assert annotation.arrow_patch is not None, (
+            f"{annotation.get_text()} has no leader line to its point"
+        )
+    plt.close("all")

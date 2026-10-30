@@ -239,6 +239,24 @@ def print_relationship(points: list[Point]) -> dict:
             f"(p = {stats_['spearman_p']:.3f})"
         )
 
+    # Pearson and Spearman disagreeing is not a curiosity, it is the finding.
+    # A high r with a low rho means one extreme point is carrying the line
+    # while the ordering of the rest does not follow it -- which is what a
+    # non-monotone relationship looks like, and exactly the situation in which
+    # quoting r as support for a linear trend would be wrong. So it is said
+    # here rather than left for a reader to notice.
+    linear = out.get("text -> image R@1", {})
+    if linear:
+        gap = abs(linear["pearson_r"]) - abs(linear["spearman_rho"])
+        if gap > 0.3:
+            print(
+                f"\n  Pearson {linear['pearson_r']:+.2f} against Spearman "
+                f"{linear['spearman_rho']:+.2f}: the line is held up by an "
+                "extreme point\n  while the ordering does not follow it. Do not "
+                "quote r as evidence of a\n  linear trend; the shape is not "
+                "monotone."
+            )
+
     if len(points) < 5:
         print(
             f"\n  n = {len(points)}. A Spearman coefficient on {len(points)} points "
@@ -255,8 +273,10 @@ def draw(points: list[Point], path: Path) -> None:
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
 
-    figure, axes = plt.subplots(figsize=(5.0, 3.4))
-    for point in points:
+    figure, axes = plt.subplots(figsize=(5.4, 3.4))
+    ordered = sorted(points, key=lambda p: p.t2i_r1)
+    span = ordered[-1].t2i_r1 - ordered[0].t2i_r1
+    for index, point in enumerate(ordered):
         axes.errorbar(
             point.t2i_r1,
             point.benefit,
@@ -265,12 +285,30 @@ def draw(points: list[Point], path: Path) -> None:
             capsize=3,
             color="#222222",
         )
+        # Two of these encoders sit 1.3 points apart on this axis, which is
+        # itself part of the result, so their labels have to be moved off
+        # their points. A label moved off its point can end up beside its
+        # neighbour's -- it did, and the figure then named the wrong encoder --
+        # so every label is tied to its own point by a leader line and the
+        # placement cannot mislead however crowded it gets.
+        crowded = index + 1 < len(ordered) and (
+            ordered[index + 1].t2i_r1 - point.t2i_r1 < 0.1 * span
+        )
+        left = crowded or index == len(ordered) - 1
         axes.annotate(
             point.label,
             (point.t2i_r1, point.benefit),
             textcoords="offset points",
-            xytext=(6, 4),
+            xytext=(-22 if left else 22, 14 if crowded else 6),
+            ha="right" if left else "left",
             fontsize=8,
+            arrowprops={
+                "arrowstyle": "-",
+                "linewidth": 0.5,
+                "color": "#999999",
+                "shrinkA": 1,
+                "shrinkB": 5,
+            },
         )
     axes.axhline(0.0, linewidth=0.8, linestyle="--", color="#888888")
     axes.axvline(
@@ -289,6 +327,7 @@ def draw(points: list[Point], path: Path) -> None:
         fontsize=7,
         color="#555555",
     )
+    axes.set_xlim(-0.08 * span, max(p.t2i_r1 for p in points) + 0.18 * span)
     figure.tight_layout()
     path.parent.mkdir(parents=True, exist_ok=True)
     figure.savefig(path, dpi=200)
