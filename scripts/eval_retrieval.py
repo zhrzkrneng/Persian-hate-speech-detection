@@ -45,8 +45,12 @@ from src.utils.seed import set_seed  # noqa: E402
 # encoder, and tests/test_retrieval_metrics.py imports this module for it.
 
 # Named shorthands for the models under comparison, so a run is one flag.
+# Each preset must name the same model as the classification config for that
+# encoder, or the alignment axis and the AUROC axis describe different models;
+# tests/test_retrieval_presets.py pins that correspondence.
 PRESETS: dict[str, EncoderConfig] = {
     "clip-l14": EncoderConfig(name="openai/clip-vit-large-patch14"),
+    "clip-b32": EncoderConfig(name="openai/clip-vit-base-patch32"),
     "jina-v2": EncoderConfig(name="jinaai/jina-clip-v2", trust_remote_code=True),
     "clipfa": EncoderConfig(
         name="CLIPfa",

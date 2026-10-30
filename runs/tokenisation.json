@@ -1,0 +1,66 @@
+{
+  "clip_context": 77,
+  "limit": 1000,
+  "rows": [
+    {
+      "model": "openai/clip-vit-base-patch32",
+      "language": "en",
+      "captions": 2000,
+      "mean_tokens": 12.6,
+      "median_tokens": 12.0,
+      "max_tokens": 33,
+      "over_clip_context": 0,
+      "over_clip_context_pct": 0.0
+    },
+    {
+      "model": "openai/clip-vit-base-patch32",
+      "language": "fa",
+      "captions": 2000,
+      "mean_tokens": 50.51,
+      "median_tokens": 47.0,
+      "max_tokens": 145,
+      "over_clip_context": 229,
+      "over_clip_context_pct": 11.45
+    },
+    {
+      "model": "openai/clip-vit-large-patch14",
+      "language": "en",
+      "captions": 2000,
+      "mean_tokens": 12.6,
+      "median_tokens": 12.0,
+      "max_tokens": 33,
+      "over_clip_context": 0,
+      "over_clip_context_pct": 0.0
+    },
+    {
+      "model": "openai/clip-vit-large-patch14",
+      "language": "fa",
+      "captions": 2000,
+      "mean_tokens": 50.51,
+      "median_tokens": 47.0,
+      "max_tokens": 145,
+      "over_clip_context": 229,
+      "over_clip_context_pct": 11.45
+    },
+    {
+      "model": "jinaai/jina-clip-v2",
+      "language": "en",
+      "captions": 2000,
+      "mean_tokens": 14.74,
+      "median_tokens": 14.0,
+      "max_tokens": 36,
+      "over_clip_context": 0,
+      "over_clip_context_pct": 0.0
+    },
+    {
+      "model": "jinaai/jina-clip-v2",
+      "language": "fa",
+      "captions": 2000,
+      "mean_tokens": 18.47,
+      "median_tokens": 17.0,
+      "max_tokens": 52,
+      "over_clip_context": 0,
+      "over_clip_context_pct": 0.0
+    }
+  ]
+}
