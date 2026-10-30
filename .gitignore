@@ -15,8 +15,10 @@
 # to the file that produced it. Only the heavy, regenerable artefacts are
 # ignored.
 /runs/**
-!/runs/
-!/runs/*/
+# Directories must be re-included at every depth, or git never descends far
+# enough for the *.json rule to apply. runs/retrieval/x.json worked with only
+# one level un-ignored; runs/hmc/<arch>/<fusion>/seed0.json did not.
+!/runs/**/
 !/runs/**/*.json
 checkpoints/
 *.log
