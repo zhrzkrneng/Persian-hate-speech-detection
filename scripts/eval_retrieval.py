@@ -36,6 +36,7 @@ from PIL import Image  # noqa: E402
 from tqdm import tqdm  # noqa: E402
 
 from src.config import EncoderConfig  # noqa: E402
+from src.data.retrieval_cache import cache_path, load, save  # noqa: E402
 from src.data.xm3600 import Crossmodal3600  # noqa: E402
 from src.utils.device import resolve_device  # noqa: E402
 from src.utils.seed import set_seed  # noqa: E402
@@ -124,6 +125,7 @@ def run(
     language: str,
     limit: int | None,
     batch_size: int,
+    feature_root: Path | None = None,
 ) -> dict:
     dataset = Crossmodal3600(root, language)
     records = dataset.with_images()
@@ -148,9 +150,24 @@ def run(
     )
     from src.encoders import build_encoder
 
-    encoder = build_encoder(config, device)
+    # Every language of this benchmark captions the same images in the same
+    # order, so the image pass is shared. It is also most of the work: on CPU
+    # the images take minutes per encoder and their captions take seconds.
+    keys = [r.key for r in records]
+    path = cache_path(feature_root, preset, len(records)) if feature_root else None
+    image_features = load(path, keys, config.name) if path else None
 
-    image_features = encode_images(encoder, [r.image_path for r in records], batch_size)
+    encoder = build_encoder(config, device)
+    if image_features is None:
+        image_features = encode_images(
+            encoder, [r.image_path for r in records], batch_size
+        )
+        if path:
+            save(path, image_features, keys, config.name)
+            print(f"cached image features at {path}")
+    else:
+        print(f"reusing cached image features from {path}")
+
     text_features = encode_texts(encoder, texts, batch_size)
     if image_features.shape[1] != text_features.shape[1]:
         raise RuntimeError(
@@ -182,6 +199,11 @@ def main() -> None:
     parser.add_argument("--trust-remote-code", action="store_true")
     parser.add_argument("--device", default="auto")
     parser.add_argument("--out", default="runs/retrieval")
+    parser.add_argument(
+        "--feature-root",
+        default="features",
+        help="where to cache the image pass; --feature-root '' disables it",
+    )
     parser.add_argument("--seed", type=int, default=0)
     args = parser.parse_args()
 
@@ -204,6 +226,7 @@ def main() -> None:
         args.language,
         args.limit,
         args.batch_size,
+        Path(args.feature_root) if args.feature_root else None,
     )
 
     for direction, scores in payload["results"].items():
