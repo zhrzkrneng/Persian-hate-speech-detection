@@ -167,6 +167,45 @@ def collect(language: str, architecture: str) -> tuple[list[Point], list[str]]:
     return points, skipped
 
 
+def from_numbers(path: Path, language: str) -> tuple[list[Point], list[str]]:
+    """Points taken from a collected numbers file rather than from runs/.
+
+    The figure was once redrawn while two encoders' cells were being re-run,
+    and it silently came back with two points instead of four, beside tables
+    that still had all four. One source for both removes that.
+    """
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    points: list[Point] = []
+    skipped: list[str] = []
+    for preset in ENCODERS:
+        # paper_numbers.json is keyed by the display label, this module by the
+        # retrieval preset; LABELS is the one place that joins them.
+        label = LABELS[preset]
+        benefit = payload["fusion_benefit"].get(label)
+        alignment = payload["retrieval"].get(label, {}).get(language)
+        cells = payload["cells"].get(label, {})
+        if not (benefit and alignment and cells):
+            skipped.append(f"{label}: absent from {path}")
+            continue
+        points.append(
+            Point(
+                encoder=preset,
+                label=label,
+                language=language,
+                t2i_r1=alignment["t2i_r1"],
+                i2t_r1=alignment["i2t_r1"],
+                images=alignment["images"],
+                benefit=benefit["mean"],
+                benefit_sd=benefit["sd"],
+                benefit_p=benefit["p"],
+                seeds=cells["hateclipper/align"]["seeds"],
+                align_auroc=cells["hateclipper/align"]["test"]["auroc"]["mean"],
+                concat_auroc=cells["hateclipper/concat"]["test"]["auroc"]["mean"],
+            )
+        )
+    return points, skipped
+
+
 def correlate(xs: list[float], ys: list[float]) -> dict:
     from scipy import stats
 
@@ -342,9 +381,17 @@ def main() -> None:
     parser.add_argument("--architecture", default="hateclipper")
     parser.add_argument("--figure", help="also write the figure here")
     parser.add_argument("--out", default="runs/alignment_benefit.json")
+    parser.add_argument(
+        "--numbers",
+        help="build the points from a paper_numbers.json instead of runs/, so "
+        "the figure and the manuscript's tables cannot come from different cells",
+    )
     args = parser.parse_args()
 
-    points, skipped = collect(args.language, args.architecture)
+    if args.numbers:
+        points, skipped = from_numbers(Path(args.numbers), args.language)
+    else:
+        points, skipped = collect(args.language, args.architecture)
     for note in skipped:
         print(f"skipped {note}")
     if len(points) < 2:
