@@ -23,11 +23,34 @@ def collect(directory: Path) -> tuple[list[Metrics], list[Metrics], list[int]]:
         raise FileNotFoundError(f"no seed*.json under {directory}")
 
     val, test, seeds = [], [], []
+    settings: set[tuple[str, str, str]] = set()
     for path in files:
         payload = json.loads(path.read_text(encoding="utf-8"))
         val.append(Metrics(**payload["val"]))
         test.append(Metrics(**payload["test"]))
         seeds.append(payload["seed"])
+        settings.add(
+            (
+                payload.get("encoder", ""),
+                payload.get("architecture", ""),
+                payload.get("fusion", ""),
+            )
+        )
+
+    # Every seed file records what produced it, so a directory holding two
+    # different settings can be caught instead of averaged. Averaging across
+    # encoders would read as one well-behaved number with a wide spread, and
+    # the mean of two encoders is not a result about either.
+    if len(settings) > 1:
+        raise SystemExit(
+            f"{directory} holds runs from more than one setting: "
+            + "; ".join(" / ".join(s) for s in sorted(settings))
+            + "\nThese cannot be averaged. Move the stale files out."
+        )
+
+    duplicated = {seed for seed in seeds if seeds.count(seed) > 1}
+    if duplicated:
+        raise SystemExit(f"{directory}: seed(s) {sorted(duplicated)} appear twice")
     return val, test, seeds
 
 

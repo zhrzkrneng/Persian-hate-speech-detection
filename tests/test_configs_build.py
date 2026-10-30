@@ -24,7 +24,9 @@ from src.config import load_config  # noqa: E402
 from src.models import ARCHITECTURES, build_model  # noqa: E402
 
 CONFIG_DIR = Path(__file__).resolve().parents[1] / "configs"
-CONFIGS = sorted(CONFIG_DIR.glob("*.yaml"))
+# rglob, not glob: an ablation group lives in configs/ablation/, and a glob
+# that stops at the top level would silently stop covering it.
+CONFIGS = sorted(CONFIG_DIR.rglob("*.yaml"))
 
 # Encoder embedding widths, so each config is built at the width its own
 # encoder actually produces rather than at an arbitrary one.
