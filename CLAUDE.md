@@ -190,6 +190,32 @@ and, for anything newer, check the version it was added in before pushing.
   `clip_loss`, which 5.x removed. Our own code handles both via
   `_as_features()`, but the comparison needs one version all three encoders
   load under.
+
+- **A container restart reverts pip to the image's versions, so the pin has to
+  be reapplied every session.** `requirements.txt` is a declaration, not a
+  state: a restart brought back `transformers` 5.22.0 and jina then failed on
+  four languages in a row with `cannot import name 'clip_loss'`. Check the
+  installed version before any encoding run, not after:
+  `python -c "import transformers; print(transformers.__version__)"`.
+
+- **The transformers major version changes image features, so caches from
+  either side of it cannot be mixed.** This was an assumption written down as
+  one -- "for a fixed checkpoint the values should not depend on the version"
+  -- until it was measured on 64 memes against the 5.22.0 caches:
+
+  | encoder | image max abs diff | text | feature scale |
+  | --- | --- | --- | --- |
+  | CLIP ViT-L/14 | 7.1e-02 | 0 | 11.37 |
+  | CLIP ViT-B/32 | 1.9e-02 | 0 | 8.11 |
+  | CLIPfa | 1.3e-02 | 0 | 3.87 |
+
+  Text is bit-identical; image is not. The cause is in the library's own
+  warning: 5.x defaults to the fast torchvision image processor where 4.x uses
+  the slow PIL one for these checkpoints. `FeatureDataset` and the retrieval
+  image cache now refuse a cache from the other side of that boundary. Note
+  what this does *not* touch: a fusion benefit is a difference between two
+  cells that read the same cache, so preprocessing cancels in it. What moves is
+  the absolute level.
 - jina-clip-v2 needs `trust_remote_code=True`, which executes code downloaded
   from its model repo. It is also CC BY-NC 4.0 — fine for research, and it has
   to be stated in the paper.
