@@ -12,12 +12,17 @@ here:
   re-downloads a file. This project's caches have been built in one place and
   trained on in another, so the claim that a file holds a given encoder's
   features rests on the path alone. Written inside the file, it can be checked.
-- The two halves of the comparison were encoded under different library
-  versions: jina-clip-v2 on a Kaggle GPU, CLIP ViT-L/14 on this machine. For a
-  fixed checkpoint the values should not depend on the transformers version,
-  but "should not" is an assumption, and transformers 5 did change the output
-  objects enough that `_as_features()` exists to absorb it. A number in a paper
-  should be traceable to the versions that produced it.
+- The transformers version changes the features, which was an assumption
+  until it was measured. Encoding the same 64 memes under 4.57.6 and comparing
+  with a cache written under 5.22.0: the **text** features are bit-identical,
+  and the **image** features are not -- max |delta| of 7.1e-02 on CLIP
+  ViT-L/14 against a feature scale of 11.4, 1.9e-02 on ViT-B/32, 1.3e-02 on
+  CLIPfa. The cause is in the library's own warning: 5.x defaults to the fast
+  torchvision image processor where 4.x uses the slow PIL one for these
+  checkpoints, so the image is resized and normalised slightly differently.
+  Neither is wrong; they are simply not the same pipeline, and an encoder
+  comparison needs one. A cache whose recorded transformers major version
+  disagrees with the running one is therefore refused.
 
 Nothing here imports transformers. Versions are read from installed package
 metadata, which does not execute the package: training reads this module, and
@@ -38,6 +43,14 @@ PROVENANCE_PACKAGES = ("torch", "transformers")
 
 class CacheMismatch(ValueError):
     """The cache was built by something other than what is being asked for."""
+
+
+def _major(version: str | None) -> str | None:
+    """The major component of a version string, or None if there isn't one."""
+    if not version:
+        return None
+    head = version.split(".")[0]
+    return head if head.isdigit() else None
 
 
 def _versions() -> dict[str, str]:
@@ -201,6 +214,27 @@ class FeatureDataset(Dataset):
             print(
                 f"note: {cache.path} carries no provenance, so the encoder "
                 f"cannot be checked; its path says {expect_encoder}"
+            )
+
+        # The transformers major version is checked for the same reason as the
+        # encoder, and it is not a formality: measured on 64 memes, image
+        # features differ between 4.57.6 and 5.22.0 by up to 7.1e-02 on a
+        # feature scale of 11.4, because 5.x resizes images with the fast
+        # torchvision processor where 4.x uses the slow PIL one. Text features
+        # are identical. A table whose rows were encoded under both is
+        # comparing two preprocessing pipelines as well as two encoders.
+        #
+        # Absent provenance is still read with a note, as above: the first real
+        # results came from a cache written before this field existed.
+        cached_major = _major((self.meta.get("versions") or {}).get("transformers"))
+        running_major = _major(_versions().get("transformers"))
+        if cached_major and running_major and cached_major != running_major:
+            raise CacheMismatch(
+                f"{cache.path} was encoded under transformers {cached_major}.x "
+                f"and this run has {running_major}.x. Image features are not "
+                "the same across that boundary -- the default image processor "
+                "changed -- so re-extract this cache under the running version "
+                "rather than mixing the two."
             )
 
         self.image_features: torch.Tensor = payload["image_features"]
