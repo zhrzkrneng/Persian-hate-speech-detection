@@ -1,0 +1,16 @@
+{
+  "encoder": "jinaai/jina-clip-v2",
+  "architecture": "memeclip",
+  "fusion": "align",
+  "seed": 0,
+  "val": {
+    "auroc": 0.7757757117024852,
+    "accuracy": 0.656,
+    "macro_f1": 0.634974533106961
+  },
+  "test": {
+    "auroc": 0.773733493397359,
+    "accuracy": 0.678,
+    "macro_f1": 0.660343285345395
+  }
+}
