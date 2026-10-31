@@ -22,6 +22,19 @@ meme dataset at all.
 are under a point of AUROC, which one run cannot resolve. Use
 `scripts/run_seeds.sh` and report mean ± standard deviation.
 
+**Crossmodal-3600's captions are written per language, not translated, so
+alignment is not cleanly comparable across languages.** Each language has its
+own annotators and its own style: German supplies 2571 captions averaging 11.1
+whitespace tokens for the same 1000 images where English supplies 2000
+averaging 9.3, and jina-clip-v2 scores *higher* on German (84.29) than on
+English (70.25). A longer, more specific caption is an easier query, so part
+of a cross-language gap is annotation style rather than encoder ability.
+Comparing encoders *within* a language is clean; comparing languages is not,
+and the twenty-point analysis rests on exactly that comparison, so it has to
+be stated rather than assumed away. (Whitespace token counts are also
+meaningless for Chinese, which does not space its words -- that measure read
+1.0 and was my own instrument failing, not the data.)
+
 **Never report a recall without its chance level.** On a 50-image slice, 2%
 looks like a result until you notice chance was 2%. `summarise_retrieval.py`
 prints chance beside every row for this reason.
