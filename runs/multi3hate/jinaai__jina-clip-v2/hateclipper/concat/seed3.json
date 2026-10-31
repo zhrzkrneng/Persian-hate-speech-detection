@@ -1,0 +1,70 @@
+{
+  "encoder": "jinaai/jina-clip-v2",
+  "architecture": "hateclipper",
+  "fusion": "concat",
+  "seed": 3,
+  "hmc": {
+    "val": {
+      "auroc": 0.7666864028420093,
+      "accuracy": 0.688,
+      "macro_f1": 0.6780265504259957
+    },
+    "test": {
+      "auroc": 0.7926770708283312,
+      "accuracy": 0.707,
+      "macro_f1": 0.6985940905925352
+    }
+  },
+  "multi3hate": {
+    "en": {
+      "auroc": 0.641389432485323,
+      "accuracy": 0.6133333333333333,
+      "macro_f1": 0.6132645803698435,
+      "memes": 300,
+      "hateful": 154,
+      "majority_baseline": 0.5133333333333333,
+      "predicted_positive_rate": 0.47333333333333333,
+      "country": "US"
+    },
+    "de": {
+      "auroc": 0.6736229742832078,
+      "accuracy": 0.64,
+      "macro_f1": 0.6192714453584018,
+      "memes": 300,
+      "hateful": 179,
+      "majority_baseline": 0.5966666666666667,
+      "predicted_positive_rate": 0.6366666666666667,
+      "country": "DE"
+    },
+    "es": {
+      "auroc": 0.689703300166584,
+      "accuracy": 0.6166666666666667,
+      "macro_f1": 0.5989817623879765,
+      "memes": 300,
+      "hateful": 167,
+      "majority_baseline": 0.5566666666666666,
+      "predicted_positive_rate": 0.6533333333333333,
+      "country": "MX"
+    },
+    "hi": {
+      "auroc": 0.6470370370370371,
+      "accuracy": 0.5833333333333334,
+      "macro_f1": 0.5788362402991947,
+      "memes": 300,
+      "hateful": 180,
+      "majority_baseline": 0.6,
+      "predicted_positive_rate": 0.5033333333333333,
+      "country": "IN"
+    },
+    "zh": {
+      "auroc": 0.577799043062201,
+      "accuracy": 0.49666666666666665,
+      "macro_f1": 0.4966163282994966,
+      "memes": 300,
+      "hateful": 190,
+      "majority_baseline": 0.6333333333333333,
+      "predicted_positive_rate": 0.3566666666666667,
+      "country": "CN"
+    }
+  }
+}
