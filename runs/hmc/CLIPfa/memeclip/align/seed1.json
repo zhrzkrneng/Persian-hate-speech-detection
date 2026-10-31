@@ -1,0 +1,16 @@
+{
+  "encoder": "CLIPfa",
+  "architecture": "memeclip",
+  "fusion": "align",
+  "seed": 1,
+  "val": {
+    "auroc": 0.6208253988574355,
+    "accuracy": 0.596,
+    "macro_f1": 0.5908678462635297
+  },
+  "test": {
+    "auroc": 0.6084673869547819,
+    "accuracy": 0.575,
+    "macro_f1": 0.5695029835975571
+  }
+}
