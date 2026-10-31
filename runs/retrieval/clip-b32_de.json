@@ -1,0 +1,23 @@
+{
+  "encoder": "clip-b32",
+  "model": "openai/clip-vit-base-patch32",
+  "language": "de",
+  "images": 1000,
+  "captions": 2571,
+  "results": {
+    "text_to_image": {
+      "R@1": 19.253209233283997,
+      "R@5": 36.36717200279236,
+      "R@10": 44.92415487766266
+    },
+    "image_to_text": {
+      "R@1": 36.89999878406525,
+      "R@5": 60.39999723434448,
+      "R@10": 70.49999833106995
+    }
+  },
+  "versions": {
+    "torch": "2.15.0",
+    "transformers": "4.57.6"
+  }
+}
