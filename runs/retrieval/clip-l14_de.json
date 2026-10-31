@@ -1,0 +1,23 @@
+{
+  "encoder": "clip-l14",
+  "model": "openai/clip-vit-large-patch14",
+  "language": "de",
+  "images": 1000,
+  "captions": 2571,
+  "results": {
+    "text_to_image": {
+      "R@1": 26.72111988067627,
+      "R@5": 47.95799255371094,
+      "R@10": 56.359392404556274
+    },
+    "image_to_text": {
+      "R@1": 49.90000128746033,
+      "R@5": 74.09999966621399,
+      "R@10": 81.99999928474426
+    }
+  },
+  "versions": {
+    "torch": "2.15.0",
+    "transformers": "4.57.6"
+  }
+}
