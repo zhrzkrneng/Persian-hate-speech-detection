@@ -1,0 +1,16 @@
+{
+  "encoder": "CLIPfa",
+  "architecture": "hateclipper",
+  "fusion": "concat",
+  "seed": 0,
+  "val": {
+    "auroc": 0.6169048342961387,
+    "accuracy": 0.556,
+    "macro_f1": 0.5298124332841967
+  },
+  "test": {
+    "auroc": 0.6216326530612246,
+    "accuracy": 0.565,
+    "macro_f1": 0.5241486362756262
+  }
+}
