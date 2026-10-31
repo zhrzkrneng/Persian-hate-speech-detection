@@ -9,9 +9,9 @@
       "t2i_r1": 60.04999876022339,
       "i2t_r1": 72.2000002861023,
       "images": 1000,
-      "benefit": 0.72,
-      "benefit_sd": 0.62,
-      "benefit_p": 0.061,
+      "benefit": 0.6,
+      "benefit_sd": 0.72,
+      "benefit_p": 0.137,
       "seeds": [
         0,
         1,
@@ -19,8 +19,8 @@
         3,
         4
       ],
-      "align_auroc": 82.09,
-      "concat_auroc": 81.37
+      "align_auroc": 81.99,
+      "concat_auroc": 81.39
     },
     {
       "encoder": "clip-b32",
@@ -69,9 +69,9 @@
       "t2i_r1": 0.20000000949949026,
       "i2t_r1": 0.4000000189989805,
       "images": 1000,
-      "benefit": -1.53,
-      "benefit_sd": 0.99,
-      "benefit_p": 0.026,
+      "benefit": -1.93,
+      "benefit_sd": 0.71,
+      "benefit_p": 0.004,
       "seeds": [
         0,
         1,
@@ -79,22 +79,22 @@
         3,
         4
       ],
-      "align_auroc": 61.1,
-      "concat_auroc": 62.64
+      "align_auroc": 60.73,
+      "concat_auroc": 62.67
     }
   ],
   "relationship": {
     "text -> image R@1": {
       "n": 4,
-      "pearson_r": 0.8079599982991675,
-      "pearson_p": 0.19204000170083235,
+      "pearson_r": 0.8521501021014072,
+      "pearson_p": 0.1478498978985927,
       "spearman_rho": 0.19999999999999998,
       "spearman_p": 0.8
     },
     "image -> text R@1": {
       "n": 4,
-      "pearson_r": 0.8468295171913536,
-      "pearson_p": 0.15317048280864642,
+      "pearson_r": 0.8855524781681945,
+      "pearson_p": 0.11444752183180551,
       "spearman_rho": 0.19999999999999998,
       "spearman_p": 0.8
     }

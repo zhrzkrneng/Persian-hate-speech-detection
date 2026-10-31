@@ -1,0 +1,16 @@
+{
+  "encoder": "openai/clip-vit-large-patch14",
+  "architecture": "memeclip",
+  "fusion": "align",
+  "seed": 4,
+  "val": {
+    "auroc": 0.791858027555968,
+    "accuracy": 0.686,
+    "macro_f1": 0.6737201308444623
+  },
+  "test": {
+    "auroc": 0.8201520608243296,
+    "accuracy": 0.722,
+    "macro_f1": 0.7154251834381551
+  }
+}

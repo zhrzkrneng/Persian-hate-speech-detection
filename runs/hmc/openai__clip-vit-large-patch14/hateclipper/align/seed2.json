@@ -1,0 +1,16 @@
+{
+  "encoder": "openai/clip-vit-large-patch14",
+  "architecture": "hateclipper",
+  "fusion": "align",
+  "seed": 2,
+  "val": {
+    "auroc": 0.7902097902097902,
+    "accuracy": 0.7,
+    "macro_f1": 0.6853182062298604
+  },
+  "test": {
+    "auroc": 0.816218487394958,
+    "accuracy": 0.725,
+    "macro_f1": 0.7171104945834375
+  }
+}
