@@ -119,3 +119,115 @@ def load(path: Path, keys: list[str], encoder: str) -> torch.Tensor | None:
             f"{path}: {features.shape[0]} rows for {len(keys)} keys"
         )
     return features
+
+
+# --- shards -------------------------------------------------------------
+#
+# The image pass is written in pieces for the same reason the Hateful Memes
+# cache is: this container restarts without notice, and a two-hour cap kills a
+# background job outright. jina-clip-v2 works at 512x512 at batch 8, and its
+# pass over 1000 images ran for ninety-five minutes without finishing; when the
+# job was stopped, the whole ninety-five minutes was gone, because the cache is
+# written once, at the end. A shard every `shard_size` images costs the shard
+# in flight instead.
+#
+# Shards carry the same checks as the finished file -- encoder, library major
+# version, and the keys themselves -- and must tile the range from 0 with no
+# gap. Half a pass from each of two encoders is refused rather than joined.
+
+
+def shard_dir(path: Path) -> Path:
+    """Where the pieces of `path` live while it is being built."""
+    return path.with_suffix("")
+
+
+def save_shard(
+    path: Path, start: int, features: torch.Tensor, keys: list[str], encoder: str
+) -> Path:
+    from .features import _versions
+
+    if features.shape[0] != len(keys):
+        raise RetrievalCacheError(
+            f"shard at {start}: {features.shape[0]} rows for {len(keys)} keys"
+        )
+    directory = shard_dir(path)
+    directory.mkdir(parents=True, exist_ok=True)
+    out = directory / f"shard_{start:06d}.pt"
+    temporary = out.with_suffix(".tmp")
+    torch.save(
+        {
+            "features": features,
+            "keys": list(keys),
+            "encoder": encoder,
+            "start": start,
+            "versions": _versions(),
+        },
+        temporary,
+    )
+    temporary.replace(out)
+    return out
+
+
+def load_shards(path: Path, keys: list[str], encoder: str) -> tuple[torch.Tensor, int]:
+    """Whatever has been encoded so far, and how many images that is.
+
+    Returns an empty tensor and 0 when there is nothing to resume from. A shard
+    that disagrees about the encoder, the library version or the keys is
+    refused: resuming across those boundaries would join two different passes.
+    """
+    from .features import _major, _versions
+
+    directory = shard_dir(path)
+    if not directory.exists():
+        return torch.empty(0), 0
+
+    running = _major(_versions().get("transformers"))
+    pieces = []
+    for shard in sorted(directory.glob("shard_*.pt")):
+        payload = torch.load(shard, map_location="cpu", weights_only=False)
+        if payload.get("encoder") != encoder:
+            raise RetrievalCacheError(
+                f"{shard} was written by {payload.get('encoder')!r}, not "
+                f"{encoder!r}; delete {directory} and start again."
+            )
+        cached = _major((payload.get("versions") or {}).get("transformers"))
+        if cached and running and cached != running:
+            raise RetrievalCacheError(
+                f"{shard} was encoded under transformers {cached}.x and this "
+                f"run has {running}.x; delete {directory} and start again."
+            )
+        pieces.append(payload)
+
+    if not pieces:
+        return torch.empty(0), 0
+
+    # They must tile the range from 0 with no gap and no overlap, in order.
+    position = 0
+    for payload in pieces:
+        if payload["start"] != position:
+            raise RetrievalCacheError(
+                f"{directory}: shards do not tile from 0 -- expected a shard at "
+                f"{position}, found one at {payload['start']}. Delete the "
+                "directory and start again."
+            )
+        width = payload["features"].shape[0]
+        if list(payload["keys"]) != list(keys[position : position + width]):
+            raise RetrievalCacheError(
+                f"{directory}: the shard at {position} holds different images "
+                "than this run asks for. Delete the directory and start again."
+            )
+        position += width
+
+    return torch.cat([p["features"] for p in pieces]), position
+
+
+def clear_shards(path: Path) -> int:
+    directory = shard_dir(path)
+    if not directory.exists():
+        return 0
+    removed = 0
+    for shard in directory.glob("shard_*.pt"):
+        shard.unlink()
+        removed += 1
+    directory.rmdir()
+    return removed

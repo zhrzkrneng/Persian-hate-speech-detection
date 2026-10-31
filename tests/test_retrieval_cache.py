@@ -26,8 +26,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from src.data.retrieval_cache import (  # noqa: E402
     RetrievalCacheError,
     cache_path,
+    clear_shards,
     load,
+    load_shards,
     save,
+    save_shard,
 )
 
 ENCODER = "openai/clip-vit-base-patch32"
@@ -137,3 +140,76 @@ def test_the_same_transformers_major_is_reused(
     monkeypatch.setattr(features, "_versions", lambda: {"transformers": "4.57.6"})
     loaded = load(path, ["a", "b"], ENCODER)
     assert loaded is not None and torch.equal(loaded, features_tensor)
+
+
+# --- shards -------------------------------------------------------------
+
+
+def test_nothing_to_resume_from_is_not_an_error(tmp_path: Path) -> None:
+    features, count = load_shards(cache_path(tmp_path, "jina-v2", 4), ["a"], ENCODER)
+    assert count == 0 and features.numel() == 0
+
+
+def test_shards_resume_where_they_stopped(tmp_path: Path) -> None:
+    """The point of the whole thing: ninety-five minutes should not be lost."""
+    path = cache_path(tmp_path, "jina-v2", 4)
+    keys = ["a", "b", "c", "d"]
+    first = torch.randn(2, 8)
+    save_shard(path, 0, first, keys[:2], ENCODER)
+
+    done, count = load_shards(path, keys, ENCODER)
+    assert count == 2 and torch.equal(done, first)
+
+    second = torch.randn(2, 8)
+    save_shard(path, 2, second, keys[2:], ENCODER)
+    done, count = load_shards(path, keys, ENCODER)
+    assert count == 4
+    assert torch.equal(done, torch.cat([first, second]))
+
+
+def test_a_gap_in_the_shards_is_refused(tmp_path: Path) -> None:
+    """Concatenating across a gap would misalign every caption after it."""
+    path = cache_path(tmp_path, "jina-v2", 4)
+    keys = ["a", "b", "c", "d"]
+    save_shard(path, 0, torch.randn(2, 8), keys[:2], ENCODER)
+    save_shard(path, 3, torch.randn(1, 8), keys[3:], ENCODER)
+    with pytest.raises(RetrievalCacheError, match="do not tile from 0"):
+        load_shards(path, keys, ENCODER)
+
+
+def test_shards_from_another_encoder_are_refused(tmp_path: Path) -> None:
+    path = cache_path(tmp_path, "jina-v2", 2)
+    save_shard(path, 0, torch.randn(2, 8), ["a", "b"], ENCODER)
+    with pytest.raises(RetrievalCacheError, match="not 'jinaai/jina-clip-v2'"):
+        load_shards(path, ["a", "b"], "jinaai/jina-clip-v2")
+
+
+def test_shards_from_another_library_major_are_refused(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from src.data import features
+
+    path = cache_path(tmp_path, "jina-v2", 2)
+    monkeypatch.setattr(features, "_versions", lambda: {"transformers": "5.22.0"})
+    save_shard(path, 0, torch.randn(2, 8), ["a", "b"], ENCODER)
+    monkeypatch.setattr(features, "_versions", lambda: {"transformers": "4.57.6"})
+    with pytest.raises(RetrievalCacheError, match="transformers 5.x"):
+        load_shards(path, ["a", "b"], ENCODER)
+
+
+def test_shards_holding_other_images_are_refused(tmp_path: Path) -> None:
+    """Same count, same encoder, different images: the dangerous case."""
+    path = cache_path(tmp_path, "jina-v2", 2)
+    save_shard(path, 0, torch.randn(2, 8), ["a", "b"], ENCODER)
+    with pytest.raises(RetrievalCacheError, match="different images"):
+        load_shards(path, ["x", "y"], ENCODER)
+
+
+def test_clearing_shards_leaves_the_finished_cache(tmp_path: Path) -> None:
+    path = cache_path(tmp_path, "jina-v2", 2)
+    save_shard(path, 0, torch.randn(2, 8), ["a", "b"], ENCODER)
+    features = torch.randn(2, 8)
+    save(path, features, ["a", "b"], ENCODER)
+    assert clear_shards(path) == 1
+    loaded = load(path, ["a", "b"], ENCODER)
+    assert loaded is not None and torch.equal(loaded, features)
