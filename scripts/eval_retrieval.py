@@ -36,6 +36,15 @@ from PIL import Image  # noqa: E402
 from tqdm import tqdm  # noqa: E402
 
 from src.config import EncoderConfig  # noqa: E402
+from src.data.features import _versions  # noqa: E402
+from src.data.retrieval_cache import (  # noqa: E402
+    cache_path,
+    clear_shards,
+    load,
+    load_shards,
+    save,
+    save_shard,
+)
 from src.data.xm3600 import Crossmodal3600  # noqa: E402
 from src.utils.device import resolve_device  # noqa: E402
 from src.utils.seed import set_seed  # noqa: E402
@@ -45,8 +54,12 @@ from src.utils.seed import set_seed  # noqa: E402
 # encoder, and tests/test_retrieval_metrics.py imports this module for it.
 
 # Named shorthands for the models under comparison, so a run is one flag.
+# Each preset must name the same model as the classification config for that
+# encoder, or the alignment axis and the AUROC axis describe different models;
+# tests/test_retrieval_presets.py pins that correspondence.
 PRESETS: dict[str, EncoderConfig] = {
     "clip-l14": EncoderConfig(name="openai/clip-vit-large-patch14"),
+    "clip-b32": EncoderConfig(name="openai/clip-vit-base-patch32"),
     "jina-v2": EncoderConfig(name="jinaai/jina-clip-v2", trust_remote_code=True),
     "clipfa": EncoderConfig(
         name="CLIPfa",
@@ -75,6 +88,40 @@ def encode_texts(encoder, texts: list[str], batch_size: int) -> torch.Tensor:
     for start in tqdm(range(0, len(texts), batch_size), desc="texts", leave=False):
         features.append(encoder.encode_texts(texts[start : start + batch_size]))
     return torch.cat(features)
+
+
+def encode_images_in_shards(
+    encoder,
+    paths: list[Path],
+    keys: list[str],
+    batch_size: int,
+    cache: Path | None,
+    encoder_name: str,
+    shard_size: int,
+) -> torch.Tensor:
+    """Encode the images, writing a shard every `shard_size` of them.
+
+    Without this the pass is written once, at the end. jina-clip-v2 ran for
+    ninety-five minutes over 1000 images and was stopped at a two-hour job
+    limit with nothing on disk; the next attempt would have started from zero.
+    """
+    if cache is None:
+        return encode_images(encoder, paths, batch_size)
+
+    done, encoded = load_shards(cache, keys, encoder_name)
+    if encoded:
+        print(f"resuming: {encoded}/{len(paths)} images already encoded")
+
+    pieces = [done] if encoded else []
+    while encoded < len(paths):
+        end = min(encoded + shard_size, len(paths))
+        features = encode_images(encoder, paths[encoded:end], batch_size)
+        save_shard(cache, encoded, features, keys[encoded:end], encoder_name)
+        pieces.append(features)
+        encoded = end
+        print(f"images: {encoded}/{len(paths)}", flush=True)
+
+    return torch.cat(pieces)
 
 
 def recall_at_k(ranks: torch.Tensor, ks: tuple[int, ...]) -> dict[str, float]:
@@ -120,6 +167,8 @@ def run(
     language: str,
     limit: int | None,
     batch_size: int,
+    feature_root: Path | None = None,
+    shard_size: int = 200,
 ) -> dict:
     dataset = Crossmodal3600(root, language)
     records = dataset.with_images()
@@ -144,9 +193,31 @@ def run(
     )
     from src.encoders import build_encoder
 
-    encoder = build_encoder(config, device)
+    # Every language of this benchmark captions the same images in the same
+    # order, so the image pass is shared. It is also most of the work: on CPU
+    # the images take minutes per encoder and their captions take seconds.
+    keys = [r.key for r in records]
+    path = cache_path(feature_root, preset, len(records)) if feature_root else None
+    image_features = load(path, keys, config.name) if path else None
 
-    image_features = encode_images(encoder, [r.image_path for r in records], batch_size)
+    encoder = build_encoder(config, device)
+    if image_features is None:
+        image_features = encode_images_in_shards(
+            encoder,
+            [r.image_path for r in records],
+            keys,
+            batch_size,
+            path,
+            config.name,
+            shard_size,
+        )
+        if path:
+            save(path, image_features, keys, config.name)
+            clear_shards(path)
+            print(f"cached image features at {path}")
+    else:
+        print(f"reusing cached image features from {path}")
+
     text_features = encode_texts(encoder, texts, batch_size)
     if image_features.shape[1] != text_features.shape[1]:
         raise RuntimeError(
@@ -163,6 +234,12 @@ def run(
         "images": len(records),
         "captions": len(texts),
         "results": results,
+        # The transformers version changes image features -- 5.x resizes with
+        # the fast torchvision processor where 4.x uses the slow PIL one -- so
+        # a retrieval score is only comparable with another taken under the
+        # same major version. It was not recorded here once, and a table ended
+        # up holding rows from both.
+        "versions": _versions(),
     }
 
 
@@ -175,9 +252,21 @@ def main() -> None:
     parser.add_argument("--root", default="data/xm3600")
     parser.add_argument("--limit", type=int, help="use only the first N images")
     parser.add_argument("--batch-size", type=int, default=32)
+    parser.add_argument(
+        "--shard-size",
+        type=int,
+        default=200,
+        help="write the image pass to disk every N images, so a kill costs "
+        "the shard in flight rather than the whole pass",
+    )
     parser.add_argument("--trust-remote-code", action="store_true")
     parser.add_argument("--device", default="auto")
     parser.add_argument("--out", default="runs/retrieval")
+    parser.add_argument(
+        "--feature-root",
+        default="features",
+        help="where to cache the image pass; --feature-root '' disables it",
+    )
     parser.add_argument("--seed", type=int, default=0)
     args = parser.parse_args()
 
@@ -200,6 +289,8 @@ def main() -> None:
         args.language,
         args.limit,
         args.batch_size,
+        Path(args.feature_root) if args.feature_root else None,
+        args.shard_size,
     )
 
     for direction, scores in payload["results"].items():

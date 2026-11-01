@@ -1,0 +1,23 @@
+{
+  "encoder": "jina-v2",
+  "model": "jinaai/jina-clip-v2",
+  "language": "es",
+  "images": 1000,
+  "captions": 2490,
+  "results": {
+    "text_to_image": {
+      "R@1": 77.79116630554199,
+      "R@5": 95.14056444168091,
+      "R@10": 98.27309250831604
+    },
+    "image_to_text": {
+      "R@1": 83.99999737739563,
+      "R@5": 97.29999899864197,
+      "R@10": 98.69999885559082
+    }
+  },
+  "versions": {
+    "torch": "2.15.0",
+    "transformers": "4.57.6"
+  }
+}

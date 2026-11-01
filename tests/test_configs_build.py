@@ -30,9 +30,14 @@ CONFIGS = sorted(CONFIG_DIR.rglob("*.yaml"))
 
 # Encoder embedding widths, so each config is built at the width its own
 # encoder actually produces rather than at an arbitrary one.
+# Read from each model's published config.json, not guessed: CLIP ViT-B/32
+# projects to 512, and CLIPfa pools pooler_output from a RoBERTa text tower and
+# a CLIPVisionModel that are both 768 wide.
 FEATURE_DIM = {
     "openai/clip-vit-large-patch14": 768,
+    "openai/clip-vit-base-patch32": 512,
     "jinaai/jina-clip-v2": 1024,
+    "CLIPfa": 768,
 }
 
 

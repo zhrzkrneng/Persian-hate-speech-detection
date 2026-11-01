@@ -45,7 +45,15 @@ def build_loaders(config: Config) -> tuple[DataLoader, DataLoader, DataLoader, i
     )
 
 
-def train(config: Config) -> dict[str, Metrics]:
+def train_and_keep(config: Config) -> tuple[nn.Module, dict[str, Metrics]]:
+    """Train, select on validation, and hand back the selected model.
+
+    The weights are returned rather than written to disk because nothing here
+    needs them later: a run over cached features takes about two minutes, so
+    re-training is cheaper than keeping thirty checkpoints correct. What does
+    need them is reading a second corpus zero-shot with the same head, in the
+    same process, which is what scripts/eval_multi3hate.py does.
+    """
     set_seed(config.train.seed)
     device = resolve_device(config.train.device)
 
@@ -106,7 +114,11 @@ def train(config: Config) -> dict[str, Metrics]:
     print(f"test     {test_metrics}")
 
     assert best_val is not None
-    return {"val": best_val, "test": test_metrics}
+    return model, {"val": best_val, "test": test_metrics}
+
+
+def train(config: Config) -> dict[str, Metrics]:
+    return train_and_keep(config)[1]
 
 
 def result_dir(config: Config) -> Path:

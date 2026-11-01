@@ -22,6 +22,19 @@ meme dataset at all.
 are under a point of AUROC, which one run cannot resolve. Use
 `scripts/run_seeds.sh` and report mean ± standard deviation.
 
+**Crossmodal-3600's captions are written per language, not translated, so
+alignment is not cleanly comparable across languages.** Each language has its
+own annotators and its own style: German supplies 2571 captions averaging 11.1
+whitespace tokens for the same 1000 images where English supplies 2000
+averaging 9.3, and jina-clip-v2 scores *higher* on German (84.29) than on
+English (70.25). A longer, more specific caption is an easier query, so part
+of a cross-language gap is annotation style rather than encoder ability.
+Comparing encoders *within* a language is clean; comparing languages is not,
+and the twenty-point analysis rests on exactly that comparison, so it has to
+be stated rather than assumed away. (Whitespace token counts are also
+meaningless for Chinese, which does not space its words -- that measure read
+1.0 and was my own instrument failing, not the data.)
+
 **Never report a recall without its chance level.** On a 50-image slice, 2%
 looks like a result until you notice chance was 2%. `summarise_retrieval.py`
 prints chance beside every row for this reason.
@@ -58,6 +71,17 @@ transcriptions, exited 0, and renumbered every id, so `fa_0000` afterwards
 named a different meme than the annotators had discussed. Rows are matched by
 image hash, ids are never reassigned, and a row whose image has gone missing
 is reported rather than dropped.
+
+**Not every cache may be backed up, so a backup names datasets and never a
+directory.** The Hateful Memes feature caches live on a private Kaggle dataset,
+which that corpus's click-through licence permits as storage. Multi3Hate is
+CC BY-NC-ND 4.0 -- no distribution of adapted material, and an encoded copy of
+its images is adapted material -- so its caches may not be copied off this
+machine at all, not even privately. Both sit under `features/`, which is
+gitignored, so the risk is not a commit: it is a backup command written to
+sweep `features/`, which would have taken both. `features/multi3hate/` is
+separate from `features/hmc/` for that reason. Reporting a measurement made
+from those features is not distributing them.
 
 **Provenance is recorded at collection time, not after.** The platform and the
 collection date are not recoverable from a folder of images, and no one
@@ -118,6 +142,36 @@ and nothing else. Importing `src/encoders.py` for a helper pulled in
 `src/` that is not in the workflow's install list fails only in CI.
 `tests/test_imports.py` exists to make that failure name itself.
 
+**Reproduce a CI dependency failure by blocking the import, not by guessing.**
+A meta_path finder that raises for one module reproduces CI's subset exactly,
+in seconds, without touching the environment:
+
+```python
+import sys
+
+
+class Blocker:
+    def find_spec(self, name, path=None, target=None):
+        if name == "transformers" or name.startswith("transformers."):
+            raise ModuleNotFoundError("No module named 'transformers'")
+
+
+sys.meta_path.insert(0, Blocker())
+```
+
+**A module-scope import of an encoder breaks *collection*, which is worse than
+a failing test.** `scripts/extract_features.py` and
+`scripts/extract_multi3hate.py` imported `src.encoders` at module scope, so
+three test modules raised ImportError during collection and nothing in them
+ran -- three files silently absent from the result rather than red.
+`scripts/eval_retrieval.py` had deferred the same import, with a comment
+saying why, and nothing connected the three. Take `resolve_device` from
+`src.utils.device`, put `Encoder` under `TYPE_CHECKING`, and make
+`build_encoder` a module-level wrapper that imports the factory when called --
+a wrapper rather than an inline import, because an inline one hides the name
+from `monkeypatch` and replacing it is how the dispatch is tested without
+downloading a model.
+
 It covers `scripts/` as well as `src/`, and did not at first: when
 `scripts/compare_cells.py` began importing `scipy`, CI had never installed it
 and it only arrived because scikit-learn happens to depend on it. A dependency
@@ -152,6 +206,24 @@ and, for anything newer, check the version it was added in before pushing.
 
 ## Environment facts
 
+- **Run one heavy job at a time: two is slower than serial, not twice as
+  fast.** There are four cores, and torch defaults its thread pool to all of
+  them, so two python jobs ask for eight threads on four cores. A training run
+  that takes 1.5 minutes alone took 13 minutes beside a retrieval job -- an
+  8.7x slowdown for 2x the work, with load average at 8 -- and the retrieval
+  job was slower too. Measured on the same CLIPfa cells before and after
+  stopping the other job. Either serialise, or set `OMP_NUM_THREADS` so the
+  two together ask for four.
+- **Three of this session's own measurement tools have returned false
+  negatives, each costing real time.** `| head -3` truncated a listing into "the
+  Kaggle token is gone" and bought two hours of CPU instead of GPU. `pgrep -q`
+  is unsupported here and printed "PROCESS GONE" for a live process. `pgrep -f`
+  matched nothing for a `python -m src.train` that `ps aux | grep` found
+  immediately, which read as a dead sweep. Before reporting that something has
+  stopped, confirm it a second way -- `ps aux | grep -E '[p]attern'` and the
+  job's own output file -- because "it died" and "my check is wrong" look
+  identical from one command.
+
 - No GPU in the cloud session. A full Crossmodal-3600 run takes hours on CPU
   here and minutes on a free Colab or Kaggle GPU. Develop and verify here; run
   the final numbers there.
@@ -161,6 +233,32 @@ and, for anything newer, check the version it was added in before pushing.
   `clip_loss`, which 5.x removed. Our own code handles both via
   `_as_features()`, but the comparison needs one version all three encoders
   load under.
+
+- **A container restart reverts pip to the image's versions, so the pin has to
+  be reapplied every session.** `requirements.txt` is a declaration, not a
+  state: a restart brought back `transformers` 5.22.0 and jina then failed on
+  four languages in a row with `cannot import name 'clip_loss'`. Check the
+  installed version before any encoding run, not after:
+  `python -c "import transformers; print(transformers.__version__)"`.
+
+- **The transformers major version changes image features, so caches from
+  either side of it cannot be mixed.** This was an assumption written down as
+  one -- "for a fixed checkpoint the values should not depend on the version"
+  -- until it was measured on 64 memes against the 5.22.0 caches:
+
+  | encoder | image max abs diff | text | feature scale |
+  | --- | --- | --- | --- |
+  | CLIP ViT-L/14 | 7.1e-02 | 0 | 11.37 |
+  | CLIP ViT-B/32 | 1.9e-02 | 0 | 8.11 |
+  | CLIPfa | 1.3e-02 | 0 | 3.87 |
+
+  Text is bit-identical; image is not. The cause is in the library's own
+  warning: 5.x defaults to the fast torchvision image processor where 4.x uses
+  the slow PIL one for these checkpoints. `FeatureDataset` and the retrieval
+  image cache now refuse a cache from the other side of that boundary. Note
+  what this does *not* touch: a fusion benefit is a difference between two
+  cells that read the same cache, so preprocessing cancels in it. What moves is
+  the absolute level.
 - jina-clip-v2 needs `trust_remote_code=True`, which executes code downloaded
   from its model repo. It is also CC BY-NC 4.0 — fine for research, and it has
   to be stated in the paper.

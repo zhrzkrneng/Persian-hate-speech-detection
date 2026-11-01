@@ -35,3 +35,7 @@ venv/
 .vscode/
 .idea/
 .DS_Store
+paper/node_modules/
+paper/page-*.jpg
+paper/*.pdf
+paper/*.jpg
