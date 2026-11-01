@@ -15,14 +15,21 @@ const front = [
     bidirectional: true, alignment: AlignmentType.CENTER,
     spacing: { after: 160 },
     children: [new TextRun(fa(
-      "سودِ ترکیب چندوجهی تابع فضای ویژگیِ رمزگذار است، نه ظرفیت آن: " +
-      "مطالعه‌ای کنترل‌شده با فارسی به‌عنوان پیش‌بینی",
+      "سودِ ترکیب چندوجهی تابع رمزگذار است، نه هم‌ترازیِ آن: " +
+      "آزمودنِ توضیحی رایج در بیست سلولِ چندزبانه",
       { size: SIZE.title, bold: true }))],
   }),
   new Paragraph({
     bidirectional: true, alignment: AlignmentType.CENTER,
     spacing: { after: 60 },
     children: [new TextRun(fa("زهره ذاکران", { size: SIZE.authors }))],
+  }),
+  new Paragraph({
+    bidirectional: true, alignment: AlignmentType.CENTER,
+    spacing: { after: 60 },
+    children: [new TextRun(fa(
+      "دانشگاه اصفهان، مرکز آموزش عالی شهرضا",
+      { size: SIZE.authors - 1 }))],
   }),
   new Paragraph({
     bidirectional: true, alignment: AlignmentType.CENTER,

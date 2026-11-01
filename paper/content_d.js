@@ -170,10 +170,15 @@ body.push(new Paragraph({
     "alignment, and does nothing at high alignment. The decisive control is a " +
     "pair of variants of one encoder family that differ significantly in " +
     "absolute score yet have statistically indistinguishable fusion benefits, " +
-    "while a significantly weaker encoder gains more than a stronger one. No " +
-    "public Persian hateful-meme dataset exists; Persian therefore appears " +
-    "here as an untested prediction from that relationship rather than as a " +
-    "result, and is labelled as such throughout.",
+    "while a significantly weaker encoder gains more than a stronger one, so " +
+    "capacity is not what decides. We then test the proposed explanation over " +
+    "twenty encoder-language cells, reading 300 parallel memes zero-shot in " +
+    "five languages. Alignment does not predict the fusion benefit, and " +
+    "dropping the cells near chance does not recover a relationship; what " +
+    "generalises is dependence on the encoder, not the alignment axis. The " +
+    "phenomenon is real and the usual explanation for it is insufficient. No " +
+    "public Persian hateful-meme dataset exists and no Persian number is " +
+    "reported.",
     { size: SIZE.body }))],
 }));
 body.push(new Paragraph({
