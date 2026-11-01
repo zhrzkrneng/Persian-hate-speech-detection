@@ -53,6 +53,7 @@ body.push(P([fa(
   "بی‌معناست."),
 ], { indent: { firstLine: 0 } }));
 
+body.push(...F.proxy);
 body.push(...F.method);
 
 // ---------- 4. data ----------

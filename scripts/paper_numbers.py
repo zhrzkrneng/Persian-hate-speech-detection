@@ -184,6 +184,15 @@ def main() -> None:
     if path.exists():
         tokenisation = json.loads(path.read_text())
 
+    # The multilingual test of this study's own prediction. Collected from the
+    # same file scripts/multilingual_benefit.py writes, so the manuscript and
+    # that script cannot disagree about a result the manuscript reports as a
+    # failure -- the one kind of number nobody re-checks.
+    multilingual = {}
+    path = Path("runs/multilingual_benefit.json")
+    if path.exists():
+        multilingual = json.loads(path.read_text())
+
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(
@@ -196,6 +205,7 @@ def main() -> None:
                 "encoder_gap": encoder_gap,
                 "retrieval": retrieval,
                 "tokenisation": tokenisation,
+                "multilingual": multilingual,
                 "provisional": provisional,
                 "fallback_ref": args.fallback_ref,
             },
