@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import sys
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import torch
 from PIL import Image
@@ -26,7 +27,30 @@ from src.data.features import (  # noqa: E402
     save_shard,
 )
 from src.data.hmc import HatefulMemesSplit  # noqa: E402
-from src.encoders import Encoder, build_encoder, resolve_device  # noqa: E402
+from src.utils.device import resolve_device  # noqa: E402
+
+if TYPE_CHECKING:  # `Encoder` is an annotation only; importing it at
+    from src.encoders import Encoder  # runtime would pull transformers in
+
+
+def build_encoder(config, device):
+    """Build the encoder named by the config, importing the factory lazily.
+
+    `src.encoders` pulls in `transformers`, and CI installs a deliberately
+    small subset that leaves it out so that a coupling like this one names
+    itself. Importing it at module scope made three test modules fail to
+    collect, which is a harder failure than one failing test: nothing in them
+    ran. `scripts/eval_retrieval.py` already deferred this import for the same
+    reason; these two did not.
+
+    It stays a module-level name rather than an inline import inside the
+    caller so that a test can still replace it, which is how the dispatch --
+    that the config's `kind` chooses the encoder class -- is checked without
+    downloading a model.
+    """
+    from src.encoders import build_encoder as factory
+
+    return factory(config, device)
 
 
 def encode_shard(
