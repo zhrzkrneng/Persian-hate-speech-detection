@@ -148,10 +148,14 @@ in seconds, without touching the environment:
 
 ```python
 import sys
+
+
 class Blocker:
     def find_spec(self, name, path=None, target=None):
         if name == "transformers" or name.startswith("transformers."):
             raise ModuleNotFoundError("No module named 'transformers'")
+
+
 sys.meta_path.insert(0, Blocker())
 ```
 
