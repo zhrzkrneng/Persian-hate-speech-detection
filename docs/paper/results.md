@@ -13,18 +13,18 @@ Four encoders, two architectures, five seeds: sixty runs.
 
 | encoder | architecture | fusion | test AUROC | accuracy | macro F1 |
 | --- | --- | --- | --- | --- | --- |
-| CLIP ViT-L/14 | Hate-CLIPper | concat | 81.37 ± 0.28 | 73.32 ± 0.97 | 72.90 ± 1.03 |
-| CLIP ViT-L/14 | Hate-CLIPper | align | 82.09 ± 0.39 | 72.56 ± 0.99 | 71.86 ± 1.15 |
-| CLIP ViT-L/14 | MemeCLIP | align | **82.56 ± 0.59** | 72.96 ± 0.63 | 72.40 ± 0.83 |
-| CLIP ViT-B/32 | Hate-CLIPper | concat | 77.95 ± 0.29 | 68.26 ± 0.90 | 67.23 ± 1.16 |
-| CLIP ViT-B/32 | Hate-CLIPper | align | 78.79 ± 0.51 | 69.10 ± 0.69 | 68.31 ± 0.85 |
-| CLIP ViT-B/32 | MemeCLIP | align | 78.96 ± 0.35 | 68.96 ± 0.87 | 67.97 ± 1.19 |
+| CLIP ViT-L/14 | Hate-CLIPper | concat | 81.39 ± 0.23 | 73.36 ± 0.91 | 72.94 ± 0.96 |
+| CLIP ViT-L/14 | Hate-CLIPper | align | 81.99 ± 0.49 | 72.78 ± 0.99 | 72.13 ± 1.03 |
+| CLIP ViT-L/14 | MemeCLIP | align | **82.54 ± 0.36** | 72.08 ± 2.13 | 71.27 ± 2.56 |
+| CLIP ViT-B/32 | Hate-CLIPper | concat | 77.94 ± 0.39 | 68.54 ± 0.92 | 67.54 ± 1.18 |
+| CLIP ViT-B/32 | Hate-CLIPper | align | 78.80 ± 0.51 | 69.02 ± 0.75 | 68.21 ± 0.91 |
+| CLIP ViT-B/32 | MemeCLIP | align | 78.77 ± 0.79 | 68.12 ± 1.26 | 66.77 ± 1.93 |
 | jina-clip-v2 | Hate-CLIPper | concat | 79.46 ± 0.27 | 69.52 ± 1.35 | 68.41 ± 1.79 |
 | jina-clip-v2 | Hate-CLIPper | align | 79.20 ± 0.52 | 70.70 ± 1.01 | 69.74 ± 1.40 |
 | jina-clip-v2 | MemeCLIP | align | 77.88 ± 0.51 | 69.78 ± 1.33 | 68.68 ± 1.80 |
-| CLIPfa | Hate-CLIPper | concat | 62.64 ± 0.57 | 57.02 ± 1.11 | 54.38 ± 2.34 |
-| CLIPfa | Hate-CLIPper | align | 61.10 ± 1.07 | 56.42 ± 0.98 | 54.13 ± 0.96 |
-| CLIPfa | MemeCLIP | align | 61.89 ± 1.54 | 58.44 ± 1.87 | 57.72 ± 1.92 |
+| CLIPfa | Hate-CLIPper | concat | 62.67 ± 0.33 | 56.68 ± 0.93 | 53.55 ± 2.02 |
+| CLIPfa | Hate-CLIPper | align | 60.73 ± 0.82 | 56.44 ± 0.90 | 53.97 ± 0.99 |
+| CLIPfa | MemeCLIP | align | 61.77 ± 1.29 | 57.74 ± 0.95 | 56.79 ± 1.38 |
 
 Fusion ablation, all variants at one projection width, reported separately
 because a cross run at $n=256$ is not comparable with an align run at
@@ -166,7 +166,7 @@ jina-clip-v2 (−1.33, *p* = 0.039). The sign flips.
 ## 5. What this does not establish
 
 **The absolute level does not match the published one.** Hate-CLIPper reports
-85.8 AUROC on this split; the align cell here reaches 82.09, **3.7 points
+85.8 AUROC on this split; the align cell here reaches 81.99, **3.8 points
 short**. The qualitative effect reproduces, but this pipeline is weaker in
 absolute terms than the original. Every claim above is a comparison *within*
 this pipeline, where everything but one variable is held fixed. **Equality with
@@ -176,10 +176,10 @@ another paper's.
 **Four encoders is four points.** The claims that carry weight above are the
 paired and interaction tests, each over five shared seeds. The *shape* of the
 relationship — the inverted U — is read off four points and is not established.
-The multilingual extension exists to turn four points into twenty.
+That extension was run; §7 reports what it found.
 
 **CLIPfa's benefit is measured where the model barely works.** Its absolute
-AUROC is 62.6 against a chance of 50. The negative fusion benefit there is a
+AUROC is 62.7 against a chance of 50. The negative fusion benefit there is a
 real, significant effect, but it is an effect inside a near-failure regime, and
 it should be described as such rather than as a general property of
 low-alignment encoders.
@@ -222,9 +222,97 @@ Persian hateful-meme dataset, and building one needs annotators this project
 does not have. The protocol for building one is published in
 `docs/collection-protocol.md` as an artefact for whoever can.
 
-This is why Persian appears as a *prediction* rather than a result. It has a
-measured alignment on Crossmodal-3600 for every encoder in the table and no
-labels anywhere. The multilingual extension fits the alignment–benefit
-relationship over five languages that do have labels, and Persian is then read
-off that relationship — stated as an untested prediction, and labelled as one
-wherever it appears.
+Persian was going to be read off the alignment–benefit relationship as an
+untested prediction. §7 withdraws that: the relationship did not survive its
+own test. What is left for Persian is weaker and true — encoder choice
+dominates fusion choice, the CLIP family retrieves Persian at chance, and
+because the benefit tracks the encoder rather than alignment there is no rule
+of thumb for which fusion to use on a Persian encoder. It has to be measured,
+on a dataset that does not exist.
+
+## 7. The multilingual extension, and the prediction it refuted
+
+The four-encoder result makes a testable prediction: if the fusion benefit is
+a property of the encoder's alignment, it should be predictable from the
+alignment of *each* encoder-language pair, not only from four points on one
+English corpus. That was tested and **it does not hold**.
+
+A head trained on Hateful Memes reads Multi3Hate's 300 parallel memes in five
+languages zero-shot, five seeds per cell, with each cell's alignment taken
+from Crossmodal-3600 in that same language. Four encoders over five languages
+is twenty points.
+
+| encoder | lang | alignment R@1 | concat | align | benefit | *p* |
+| --- | --- | --- | --- | --- | --- | --- |
+| CLIP ViT-L/14 | en | 60.05 | 70.61 | 70.17 | -0.44 | 0.623 |
+| CLIP ViT-L/14 | de | 26.72 | 66.36 | 68.59 | **+2.23** | 0.017 |
+| CLIP ViT-L/14 | es | 33.86 | 72.04 | 73.70 | **+1.66** | 0.006 |
+| CLIP ViT-L/14 | hi | 0.12 | 53.86 | 52.66 | -1.19 | 0.270 |
+| CLIP ViT-L/14 | zh | 1.30 | 48.27 | 50.41 | +2.14 | 0.188 |
+| CLIP ViT-B/32 | en | 58.75 | 68.97 | 67.96 | -1.01 | 0.094 |
+| CLIP ViT-B/32 | de | 19.25 | 60.17 | 59.99 | -0.18 | 0.850 |
+| CLIP ViT-B/32 | es | 26.87 | 66.25 | 66.81 | +0.56 | 0.320 |
+| CLIP ViT-B/32 | hi | 0.16 | 57.62 | 53.20 | **-4.43** | 0.005 |
+| CLIP ViT-B/32 | zh | 0.95 | 53.20 | 51.32 | -1.88 | 0.143 |
+| jina-clip-v2 | en | 70.25 | 64.46 | 61.55 | **-2.92** | 0.004 |
+| jina-clip-v2 | de | 84.29 | 67.84 | 65.60 | **-2.24** | 0.031 |
+| jina-clip-v2 | es | 77.79 | 68.06 | 63.60 | **-4.46** | 0.001 |
+| jina-clip-v2 | hi | 48.74 | 64.55 | 61.73 | **-2.82** | 0.038 |
+| jina-clip-v2 | zh | 73.15 | 59.64 | 56.44 | -3.20 | 0.086 |
+| CLIPfa | en | 0.20 | 56.57 | 55.66 | -0.91 | 0.430 |
+| CLIPfa | de | 0.08 | 46.26 | 46.21 | -0.04 | 0.908 |
+| CLIPfa | es | 0.08 | 61.53 | 57.81 | **-3.72** | 0.003 |
+| CLIPfa | hi | 0.08 | 54.75 | 52.03 | **-2.71** | 0.035 |
+| CLIPfa | zh | 0.15 | 57.99 | 53.78 | **-4.21** | 0.005 |
+
+### The relationship is absent
+
+| subset | *n* | Pearson *r* | *p* | Spearman rho | *p* |
+| --- | --- | --- | --- | --- | --- |
+| all cells | 20 | -0.161 | 0.499 | -0.065 | 0.786 |
+| concat AUROC ≥ 55 | 15 | -0.066 | 0.814 | -0.021 | 0.940 |
+| concat AUROC ≥ 60 | 11 | -0.379 | 0.251 | -0.409 | 0.211 |
+
+A floor effect is the first objection to any null, so it was computed rather
+than argued: many cells sit near an AUROC of 50 and a difference between two
+near-random rankings measures nothing. Dropping them does not produce a
+relationship.
+
+### What did generalise
+
+| encoder | mean benefit | sd | *p* | negative in |
+| --- | --- | --- | --- | --- |
+| CLIP ViT-L/14 | +0.88 | 1.59 | 0.283 | 2/5 |
+| CLIP ViT-B/32 | -1.39 | 1.93 | 0.183 | 4/5 |
+| CLIPfa | **-2.32** | 1.79 | 0.044 | 5/5 |
+| jina-clip-v2 | **-3.13** | 0.82 | 0.001 | 5/5 |
+
+The encoder-level pattern reappears, in the same direction as the Hateful
+Memes result. jina-clip-v2 loses from element-wise fusion in every one of the
+five languages while holding the highest alignment in every one of them —
+consistent with its −0.26 on Hateful Memes and flatly inconsistent with
+alignment being what decides.
+
+**So the phenomenon is confirmed and the explanation is refuted.** The benefit
+depends on the encoder; the measured alignment is not what it depends on.
+
+### Why this is not the same quantity
+
+Two differences bound the conclusion and belong in the text rather than in a
+footnote.
+
+These cells are **zero-shot transfer**: the head trains on English Hateful
+Memes and reads a different corpus in a different language, where the
+four-encoder benefit is measured in distribution. The absolute level is far
+lower here and several cells sit near chance.
+
+And the axis is **cross-language**. Crossmodal-3600's captions are written per
+language rather than translated: German supplies 2571 captions averaging 11.1
+whitespace tokens for the same 1000 images where English supplies 2000
+averaging 9.3, and jina scores higher on German (84.29) than on English
+(70.25). A longer, more specific caption is an easier query, so part of any
+cross-language gap is annotation style rather than encoder ability. Comparing
+encoders *within* a language is clean; this axis is not, and it rests on
+exactly that comparison.
+
+Everything above comes from `python -m scripts.multilingual_benefit`.
