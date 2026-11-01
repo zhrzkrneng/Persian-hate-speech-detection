@@ -142,6 +142,32 @@ and nothing else. Importing `src/encoders.py` for a helper pulled in
 `src/` that is not in the workflow's install list fails only in CI.
 `tests/test_imports.py` exists to make that failure name itself.
 
+**Reproduce a CI dependency failure by blocking the import, not by guessing.**
+A meta_path finder that raises for one module reproduces CI's subset exactly,
+in seconds, without touching the environment:
+
+```python
+import sys
+class Blocker:
+    def find_spec(self, name, path=None, target=None):
+        if name == "transformers" or name.startswith("transformers."):
+            raise ModuleNotFoundError("No module named 'transformers'")
+sys.meta_path.insert(0, Blocker())
+```
+
+**A module-scope import of an encoder breaks *collection*, which is worse than
+a failing test.** `scripts/extract_features.py` and
+`scripts/extract_multi3hate.py` imported `src.encoders` at module scope, so
+three test modules raised ImportError during collection and nothing in them
+ran -- three files silently absent from the result rather than red.
+`scripts/eval_retrieval.py` had deferred the same import, with a comment
+saying why, and nothing connected the three. Take `resolve_device` from
+`src.utils.device`, put `Encoder` under `TYPE_CHECKING`, and make
+`build_encoder` a module-level wrapper that imports the factory when called --
+a wrapper rather than an inline import, because an inline one hides the name
+from `monkeypatch` and replacing it is how the dispatch is tested without
+downloading a model.
+
 It covers `scripts/` as well as `src/`, and did not at first: when
 `scripts/compare_cells.py` began importing `scipy`, CI had never installed it
 and it only arrived because scikit-learn happens to depend on it. A dependency
