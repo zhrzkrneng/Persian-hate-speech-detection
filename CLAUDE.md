@@ -272,6 +272,30 @@ and, for anything newer, check the version it was added in before pushing.
   merged pull requests read as unmerged that way. Fix it once per session:
   `git config remote.origin.fetch '+refs/heads/*:refs/remotes/origin/*'`.
 
+## Attribution
+
+**Commit messages and pull request descriptions carry no assistant attribution
+trailers.** No `Co-Authored-By: Claude ...`, no `Claude-Session: ...`, no
+generated-with line. The repository owner asked for this, and it holds for
+every commit from here on.
+
+The history that already carried them was rewritten on 2026-11-06, so the
+rule is not only forward-looking: 152 such lines across 97 commits are gone,
+and GitHub's contributors list holds the owner alone. The rewrite replaced
+only message text -- the root tree, every author and every date came through
+unchanged, which was checked before it was pushed:
+
+```bash
+git clone --mirror <repo> && cd <clone>
+python -m git_filter_repo --force --replace-message expressions.txt
+```
+
+where `expressions.txt` holds one `regex:...==>` line per trailer form. Do not
+redo it, and do not reach for it again for a stray trailer: force-pushing a
+public branch changes every SHA and breaks the commit links in merged pull
+requests, which is a cost worth paying once and not twice. If one slips in,
+fix the next commit and leave history alone.
+
 ## Before pushing
 
 ```bash
