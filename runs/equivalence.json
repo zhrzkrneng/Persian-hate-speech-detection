@@ -1,0 +1,125 @@
+{
+  "margin": 1.0,
+  "pairs": {
+    "CLIP ViT-L/14 - CLIP ViT-B/32": {
+      "mean": -0.27,
+      "sd": 1.0,
+      "n": 5,
+      "p_tost": 0.0885,
+      "equivalent": false,
+      "ci90_low": -1.22,
+      "ci90_high": 0.68,
+      "p_difference": 0.5798,
+      "ci95_low": -1.51,
+      "ci95_high": 0.97,
+      "verdict": "undecided",
+      "seeds": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "CLIP ViT-L/14 - jina-clip-v2": {
+      "mean": 0.86,
+      "sd": 0.53,
+      "n": 5,
+      "p_tost": 0.2915,
+      "equivalent": false,
+      "ci90_low": 0.35,
+      "ci90_high": 1.36,
+      "p_difference": 0.0225,
+      "ci95_low": 0.2,
+      "ci95_high": 1.52,
+      "verdict": "differs",
+      "seeds": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "CLIP ViT-L/14 - CLIPfa": {
+      "mean": 2.53,
+      "sd": 1.36,
+      "n": 5,
+      "p_tost": 0.9674,
+      "equivalent": false,
+      "ci90_low": 1.24,
+      "ci90_high": 3.82,
+      "p_difference": 0.014,
+      "ci95_low": 0.85,
+      "ci95_high": 4.22,
+      "verdict": "differs",
+      "seeds": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "CLIP ViT-B/32 - jina-clip-v2": {
+      "mean": 1.13,
+      "sd": 0.85,
+      "n": 5,
+      "p_tost": 0.6227,
+      "equivalent": false,
+      "ci90_low": 0.32,
+      "ci90_high": 1.94,
+      "p_difference": 0.0412,
+      "ci95_low": 0.07,
+      "ci95_high": 2.18,
+      "verdict": "differs",
+      "seeds": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "CLIP ViT-B/32 - CLIPfa": {
+      "mean": 2.8,
+      "sd": 0.71,
+      "n": 5,
+      "p_tost": 0.9976,
+      "equivalent": false,
+      "ci90_low": 2.12,
+      "ci90_high": 3.48,
+      "p_difference": 0.0009,
+      "ci95_low": 1.91,
+      "ci95_high": 3.69,
+      "verdict": "differs",
+      "seeds": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "jina-clip-v2 - CLIPfa": {
+      "mean": 1.67,
+      "sd": 1.03,
+      "n": 5,
+      "p_tost": 0.8902,
+      "equivalent": false,
+      "ci90_low": 0.69,
+      "ci90_high": 2.66,
+      "p_difference": 0.0224,
+      "ci95_low": 0.39,
+      "ci95_high": 2.95,
+      "verdict": "differs",
+      "seeds": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    }
+  }
+}

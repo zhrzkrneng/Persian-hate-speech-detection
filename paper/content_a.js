@@ -15,8 +15,8 @@ const front = [
     bidirectional: true, alignment: AlignmentType.CENTER,
     spacing: { after: 160 },
     children: [new TextRun(fa(
-      "سودِ ترکیب چندوجهی تابع رمزگذار است، نه هم‌ترازیِ آن: " +
-      "آزمودنِ توضیحی رایج در بیست سلولِ چندزبانه",
+      "سودِ ترکیبِ چندوجهی به رمزگذار وابسته است و نه به ظرفیت آن: " +
+      "مطالعه‌ای کنترل‌شده روی چهار رمزگذار",
       { size: SIZE.title, bold: true }))],
   }),
   new Paragraph({
