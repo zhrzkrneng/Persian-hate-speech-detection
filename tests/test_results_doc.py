@@ -82,3 +82,56 @@ def test_each_row_matches_the_run_records(row) -> None:
         f"{mean:.2f} ± {sd:.2f}, the records say {actual[0]:.2f} ± {actual[1]:.2f}. "
         "Re-run the cell or update the document; do not leave them disagreeing."
     )
+
+
+def test_the_multiplicity_table_is_generated_and_idempotent() -> None:
+    """A stale correction is worse than none: it names a family it no longer has.
+
+    The table is emitted whole rather than patched row by row, so this pins
+    both halves of that -- a row that drifts is caught, and a second pass over
+    a correct document changes nothing.
+    """
+    import sys
+    from pathlib import Path
+
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    from scripts.refresh_results_doc import HOLM_HEADER, rewrite_holm_table
+
+    doc = Path("docs/paper/results.md")
+    if not doc.exists():
+        pytest.skip("results document not present")
+    text = doc.read_text(encoding="utf-8")
+    if HOLM_HEADER not in text:
+        pytest.skip("no multiplicity table in the document")
+
+    once, changes = rewrite_holm_table(text)
+    assert changes == [], "the committed table does not match the run records"
+    twice, changes = rewrite_holm_table(once)
+    assert twice == once and changes == []
+
+    broken = text.replace("| holds |", "| fails |", 1)
+    _, changes = rewrite_holm_table(broken)
+    assert changes, "a drifted verdict went unnoticed"
+
+
+def test_every_corrected_claim_in_the_table_carries_its_threshold() -> None:
+    import re
+    from pathlib import Path
+
+    doc = Path("docs/paper/results.md")
+    if not doc.exists():
+        pytest.skip("results document not present")
+    # Only the multiplicity table: section 3's own tables also have rows that
+    # start "architecture:", and counting those made this read 18 for 14.
+    lines = doc.read_text(encoding="utf-8").split("\n")
+    start = lines.index("| comparison | *p* | Holm threshold | |") + 2
+    rows = []
+    for line in lines[start:]:
+        if not line.startswith("| "):
+            break
+        rows.append(line)
+    assert len(rows) == 14, f"expected the family of fourteen, found {len(rows)}"
+    for row in rows:
+        cells = [c.strip() for c in row.strip("|").split("|")]
+        assert cells[-1] in ("holds", "**fails**"), row
+        assert re.fullmatch(r"0\.\d{4}", cells[2]), row

@@ -1,0 +1,119 @@
+{
+  "alpha": 0.05,
+  "family_size": 14,
+  "extended": false,
+  "tests": {
+    "interaction: CLIP ViT-L/14 \u2212 CLIPfa": {
+      "effect": 2.55,
+      "p": 4.5328780409215335e-07,
+      "rank": 1,
+      "threshold": 0.0035714285714285718,
+      "margin": 0.0035709752836244795,
+      "holds": true
+    },
+    "interaction: CLIP ViT-L/14 \u2212 jina-clip-v2": {
+      "effect": 1.27,
+      "p": 1.0488288219686193e-06,
+      "rank": 2,
+      "threshold": 0.0038461538461538464,
+      "margin": 0.003845105017331878,
+      "holds": true
+    },
+    "fusion benefit: CLIPfa": {
+      "effect": -1.68,
+      "p": 1.9418741606479005e-05,
+      "rank": 3,
+      "threshold": 0.004166666666666667,
+      "margin": 0.004147247925060188,
+      "holds": true
+    },
+    "interaction: CLIP ViT-B/32 \u2212 CLIPfa": {
+      "effect": 2.31,
+      "p": 2.0714914674340492e-05,
+      "rank": 4,
+      "threshold": 0.004545454545454546,
+      "margin": 0.004524739630780206,
+      "holds": true
+    },
+    "fusion benefit: CLIP ViT-L/14": {
+      "effect": 0.87,
+      "p": 5.806825246529435e-05,
+      "rank": 5,
+      "threshold": 0.005,
+      "margin": 0.004941931747534706,
+      "holds": true
+    },
+    "interaction: CLIP ViT-B/32 \u2212 jina-clip-v2": {
+      "effect": 1.02,
+      "p": 0.00012910014224243885,
+      "rank": 6,
+      "threshold": 0.005555555555555556,
+      "margin": 0.0054264554133131165,
+      "holds": true
+    },
+    "architecture: jina-clip-v2": {
+      "effect": -0.93,
+      "p": 0.0001389529799418242,
+      "rank": 7,
+      "threshold": 0.00625,
+      "margin": 0.006111047020058176,
+      "holds": true
+    },
+    "fusion benefit: jina-clip-v2": {
+      "effect": -0.39,
+      "p": 0.0007347523439376625,
+      "rank": 8,
+      "threshold": 0.0071428571428571435,
+      "margin": 0.006408104798919481,
+      "holds": true
+    },
+    "interaction: jina-clip-v2 \u2212 CLIPfa": {
+      "effect": 1.29,
+      "p": 0.0008625285397668316,
+      "rank": 9,
+      "threshold": 0.008333333333333333,
+      "margin": 0.007470804793566502,
+      "holds": true
+    },
+    "fusion benefit: CLIP ViT-B/32": {
+      "effect": 0.63,
+      "p": 0.0035582670556245518,
+      "rank": 10,
+      "threshold": 0.01,
+      "margin": 0.006441732944375448,
+      "holds": true
+    },
+    "architecture: CLIPfa": {
+      "effect": 1.03,
+      "p": 0.007717674116871454,
+      "rank": 11,
+      "threshold": 0.0125,
+      "margin": 0.0047823258831285465,
+      "holds": true
+    },
+    "architecture: CLIP ViT-L/14": {
+      "effect": 0.41,
+      "p": 0.014761968498284582,
+      "rank": 12,
+      "threshold": 0.016666666666666666,
+      "margin": 0.0019046981683820841,
+      "holds": true
+    },
+    "interaction: CLIP ViT-L/14 \u2212 CLIP ViT-B/32": {
+      "effect": 0.25,
+      "p": 0.3610598963012795,
+      "rank": 13,
+      "threshold": 0.025,
+      "margin": -0.33605989630127947,
+      "holds": false
+    },
+    "architecture: CLIP ViT-B/32": {
+      "effect": 0.01,
+      "p": 0.9339502426750692,
+      "rank": 14,
+      "threshold": 0.05,
+      "margin": -0.8839502426750692,
+      "holds": false
+    }
+  }
+}

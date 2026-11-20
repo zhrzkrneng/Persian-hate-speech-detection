@@ -142,10 +142,68 @@ def measured(encoder: str, architecture: str, fusion: str) -> dict[str, str] | N
 
 DF_HEADER = re.compile(r"\*t\*\((\d+)\)")
 
+# The multiplicity table: one row per corrected comparison, each ending in the
+# procedure's verdict. Four columns and a holds/fails cell keep it apart from
+# every other table in the document.
+HOLM_ROW = re.compile(
+    r"^\| (\*{0,2})([^|*]+?)\1 \| \*{0,2}[<\d.]+\*{0,2} \| [\d.]+ \| "
+    r"\*{0,2}(?:holds|fails)\*{0,2} \|$"
+)
+
+
+HOLM_HEADER = "| comparison | *p* | Holm threshold | |"
+
+
+def holm_line(label: str, row: dict) -> str:
+    shown = "<0.001" if row["p"] < 0.001 else f"{row['p']:.3f}"
+    mark = "**" if row["holds"] else ""
+    verdict = "holds" if row["holds"] else "**fails**"
+    return f"| {label} | {mark}{shown}{mark} | {row['threshold']:.4f} | {verdict} |"
+
+
+def rewrite_holm_table(text: str) -> tuple[str, list[str]]:
+    """Replace the whole multiplicity table, not its rows one by one.
+
+    The family can gain or lose a test, and a generator that only rewrote the
+    rows already present would keep reporting the old family size while every
+    row in it looked current.
+    """
+    rows = text.split("\n")
+    try:
+        start = rows.index(HOLM_HEADER)
+    except ValueError:
+        return text, []
+    end = start + 2  # past the header and the separator
+    while end < len(rows) and HOLM_ROW.match(rows[end]):
+        end += 1
+    rebuilt = [holm_line(label, row) for label, row in multiplicity()]
+    if rows[start + 2 : end] == rebuilt:
+        return text, []
+    return (
+        "\n".join(rows[: start + 2] + rebuilt + rows[end:]),
+        [f"multiplicity table: {len(rebuilt)} row(s) rewritten"],
+    )
+
+
+def multiplicity() -> list[tuple[str, dict]]:
+    """The corrected family, in the order Holm examines it.
+
+    Read from scripts/multiplicity.py rather than recomputed here: the family
+    is a decision, and two places deciding it is how a correction quietly
+    starts covering a different set of tests than the paper says it does.
+    """
+    from scripts.multiplicity import ALPHA, family, holm
+
+    tests = family()
+    corrected = holm({k: p for k, (_, p) in tests.items()}, ALPHA)
+    return sorted(corrected.items(), key=lambda kv: kv[1]["rank"])
+
 
 def rewrite(text: str) -> tuple[str, list[str]]:
     changes: list[str] = []
     stats_by_label = statistics()
+    text, holm_changes = rewrite_holm_table(text)
+    changes.extend(holm_changes)
     # The column header names the degrees of freedom, which is data: it was
     # written as t(4) at five seeds and has to follow the records too.
     degrees = {v["df"] for v in stats_by_label.values()}

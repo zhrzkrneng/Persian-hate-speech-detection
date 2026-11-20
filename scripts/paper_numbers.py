@@ -100,6 +100,9 @@ def test(diffs: list[float]) -> dict:
         "d": round(mean / sd, 2) if sd else None,
         "ci_low": round(mean - half, 2),
         "ci_high": round(mean + half, 2),
+        # Unrounded, for the multiplicity correction: Holm compares p with a
+        # threshold as small as alpha/m, which three decimals cannot resolve.
+        "p_exact": float(result.pvalue),
         "per_seed": [round(x, 2) for x in diffs],
     }
 
@@ -207,6 +210,42 @@ def main() -> None:
     if path.exists():
         multilingual = json.loads(path.read_text())
 
+    # Holm-Bonferroni over the fourteen tests the results section reports as
+    # findings. The family is fixed in scripts/multiplicity.py, not here, so a
+    # claim cannot be moved out of it to survive a threshold.
+    from scripts.multiplicity import ALPHA, holm
+
+    primary = {}
+    for label, values in benefit.items():
+        primary[f"fusion benefit: {label}"] = values["p_exact"]
+    for label, values in architecture.items():
+        primary[f"architecture: {label}"] = values["p_exact"]
+    for key, values in interaction.items():
+        left, right = key.split(" - ")
+        primary[f"interaction: {left} \u2212 {right}"] = values["p_exact"]
+    corrected = holm(primary, ALPHA)
+    survivors = [row for row in corrected.values() if row["holds"]]
+    tightest = min(survivors, key=lambda r: r["margin"]) if survivors else None
+    multiplicity = {
+        "alpha": ALPHA,
+        "family_size": len(primary),
+        "n_holds": len(survivors),
+        "tests": {
+            label: {
+                "rank": row["rank"],
+                "p": round(row["p"], 4),
+                "threshold": round(row["threshold"], 4),
+                "margin": round(row["margin"], 4),
+                "holds": row["holds"],
+            }
+            for label, row in corrected.items()
+        },
+        "tightest": (
+            next(k for k, v in corrected.items() if v is tightest) if tightest else None
+        ),
+        "tightest_margin": round(tightest["margin"], 4) if tightest else None,
+    }
+
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(
@@ -216,6 +255,7 @@ def main() -> None:
                 "fusion_benefit": benefit,
                 "interaction": interaction,
                 "architecture": architecture,
+                "multiplicity": multiplicity,
                 "encoder_gap": encoder_gap,
                 "retrieval": retrieval,
                 "tokenisation": tokenisation,
