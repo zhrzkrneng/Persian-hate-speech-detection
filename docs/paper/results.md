@@ -1,18 +1,18 @@
 # Results on the Hateful Memes Challenge
 
 Every number below is a mean ± sample standard deviation over the seeds
-recorded for that cell
-on `test_seen`, selected on `dev_seen` AUROC and evaluated once. Each cell has
-a committed config and five per-seed JSON records under `runs/`. Every
-comparison comes from `python -m scripts.compare_cells --table`, and the
-alignment relationship from `python -m scripts.alignment_benefit`, so the prose
-and the test statistic cannot drift apart.
+recorded for that cell on `test_seen`, selected on `dev_seen` AUROC and
+evaluated once. Each cell has a committed config and one JSON record per seed
+under `runs/`, so the seed count of any cell is countable rather than asserted
+here. Every comparison comes from `python -m scripts.compare_cells --table`,
+and the alignment relationship from `python -m scripts.alignment_benefit`, so
+the prose and the test statistic cannot drift apart.
 
 ## 1. The table
 
-Four encoders, two architectures. A sweep to fifteen seeds per cell is in
-progress; `python -m scripts.refresh_results_doc` rewrites this table from the
-per-seed records, and `scripts/equivalence.py` reports the interval each count
+Four encoders, two architectures, fifteen seeds in every cell.
+`python -m scripts.refresh_results_doc` rewrites this table from the per-seed
+records, and `scripts/equivalence.py` reports the interval that count
 supports.
 
 | encoder | architecture | fusion | test AUROC | accuracy | macro F1 |
