@@ -20,7 +20,7 @@ supports.
 | CLIP ViT-L/14 | Hate-CLIPper | concat | 81.39 ± 0.23 | 73.36 ± 0.91 | 72.94 ± 0.96 |
 | CLIP ViT-L/14 | Hate-CLIPper | align | 81.99 ± 0.49 | 72.78 ± 0.99 | 72.13 ± 1.03 |
 | CLIP ViT-L/14 | MemeCLIP | align | **82.54 ± 0.36** | 72.08 ± 2.13 | 71.27 ± 2.56 |
-| CLIP ViT-B/32 | Hate-CLIPper | concat | 78.03 ± 0.40 | 68.33 ± 1.03 | 67.26 ± 1.37 |
+| CLIP ViT-B/32 | Hate-CLIPper | concat | 78.08 ± 0.42 | 68.34 ± 1.02 | 67.31 ± 1.32 |
 | CLIP ViT-B/32 | Hate-CLIPper | align | 78.80 ± 0.51 | 69.02 ± 0.75 | 68.21 ± 0.91 |
 | CLIP ViT-B/32 | MemeCLIP | align | 78.77 ± 0.79 | 68.12 ± 1.26 | 66.77 ± 1.93 |
 | jina-clip-v2 | Hate-CLIPper | concat | 79.46 ± 0.27 | 69.52 ± 1.35 | 68.41 ± 1.79 |
