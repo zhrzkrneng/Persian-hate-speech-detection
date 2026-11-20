@@ -1,6 +1,7 @@
 # Results on the Hateful Memes Challenge
 
-Every number below is a mean ± sample standard deviation over five seeds (0–4)
+Every number below is a mean ± sample standard deviation over the seeds
+recorded for that cell
 on `test_seen`, selected on `dev_seen` AUROC and evaluated once. Each cell has
 a committed config and five per-seed JSON records under `runs/`. Every
 comparison comes from `python -m scripts.compare_cells --table`, and the
@@ -9,14 +10,17 @@ and the test statistic cannot drift apart.
 
 ## 1. The table
 
-Four encoders, two architectures, five seeds: sixty runs.
+Four encoders, two architectures. A sweep to fifteen seeds per cell is in
+progress; `python -m scripts.refresh_results_doc` rewrites this table from the
+per-seed records, and `scripts/equivalence.py` reports the interval each count
+supports.
 
 | encoder | architecture | fusion | test AUROC | accuracy | macro F1 |
 | --- | --- | --- | --- | --- | --- |
 | CLIP ViT-L/14 | Hate-CLIPper | concat | 81.39 ± 0.23 | 73.36 ± 0.91 | 72.94 ± 0.96 |
 | CLIP ViT-L/14 | Hate-CLIPper | align | 81.99 ± 0.49 | 72.78 ± 0.99 | 72.13 ± 1.03 |
 | CLIP ViT-L/14 | MemeCLIP | align | **82.54 ± 0.36** | 72.08 ± 2.13 | 71.27 ± 2.56 |
-| CLIP ViT-B/32 | Hate-CLIPper | concat | 77.94 ± 0.39 | 68.54 ± 0.92 | 67.54 ± 1.18 |
+| CLIP ViT-B/32 | Hate-CLIPper | concat | 78.03 ± 0.40 | 68.33 ± 1.03 | 67.26 ± 1.37 |
 | CLIP ViT-B/32 | Hate-CLIPper | align | 78.80 ± 0.51 | 69.02 ± 0.75 | 68.21 ± 0.91 |
 | CLIP ViT-B/32 | MemeCLIP | align | 78.77 ± 0.79 | 68.12 ± 1.26 | 66.77 ± 1.93 |
 | jina-clip-v2 | Hate-CLIPper | concat | 79.46 ± 0.27 | 69.52 ± 1.35 | 68.41 ± 1.79 |
@@ -72,7 +76,8 @@ in the token count and in the retrieval score.
 
 ## 3. How the comparisons are made
 
-Both cells in every comparison ran the same five seeds, so differences are
+Both cells in every comparison are differenced over the seeds they share, so
+differences are
 taken **per seed** and tested against zero with a two-tailed paired *t*-test.
 Two independent means with their own error bars would leave in the seed noise
 the two cells share, and that noise is most of what separates them.
