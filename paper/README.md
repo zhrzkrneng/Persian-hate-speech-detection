@@ -1,6 +1,8 @@
 # The manuscript
 
-    bash paper/build.sh            # -> paper/maghale.docx
+    bash paper/build.sh                  # -> paper/maghale.docx
+    bash paper/build.sh gozaresh.docx    # -> paper/gozaresh.docx (the report)
+    bash paper/build.sh --all            # both
 
 Persian, two columns, built against the journal's own template
 («نشریه پژوهش‌های نظری و کاربردی هوش ماشینی»): B Lotus for Persian and Times
@@ -25,12 +27,23 @@ revision and lists it under `provisional`; the generator then prints a notice
 at the top of the document. It exists so a draft during a rebuild cannot
 quietly mix pipelines.
 
-## Two things the docx library cannot do
+## Three things the docx library cannot do
 
 `build.sh` inserts `<w:bidi/>` into each `<w:sectPr>` after the build. Column
 order is a section property, not a paragraph one, and without it the first
 column lands on the left — a Persian reader then meets the sections out of
 order, which is how the first draft read.
+
+**Call `build.sh`, never a generator directly.** `node report_build.js`
+produces a gozaresh.docx that opens, validates and reads in the wrong
+direction, because the bidi step lives here and not in the generator. That is
+how the report lost its section bidi once already, so the step now fails loudly
+if no `<w:sectPr>` took it.
+
+It also rezips with `-D`. A docx that carries directory entries opens in Word
+but has failed to open through cloud services — which is where a journal
+portal and a co-author's browser both read it — and every build before this
+one carried five.
 
 Numeric table cells are laid out left-to-right. In a right-to-left paragraph a
 leading sign is reordered to the far side: `-1.53` renders as `1.53-` and
@@ -43,5 +56,6 @@ same reason.
     soffice --headless --convert-to pdf paper/maghale.docx
     pdftoppm -jpeg -r 90 paper/maghale.pdf page            # then look at them
 
-Looking is not optional. Both faults above produced a file that opened, passed
-schema validation, and was wrong.
+Looking is not optional. The first two faults above produced a file that
+opened, passed schema validation, and was wrong; the third is the one the
+validator does report, as a note rather than a failure, so read its notes too.

@@ -84,13 +84,23 @@ def test(diffs: list[float]) -> dict:
     from scipy import stats
 
     result = stats.ttest_1samp(diffs, 0.0)
+    mean, sd = st.mean(diffs), st.stdev(diffs)
+    sem = sd / len(diffs) ** 0.5
+    half = stats.t.ppf(0.975, len(diffs) - 1) * sem
     return {
-        "mean": round(st.mean(diffs), 2),
-        "sd": round(st.stdev(diffs), 2),
+        "mean": round(mean, 2),
+        "sd": round(sd, 2),
         "t": round(float(result.statistic), 2),
         "p": round(float(result.pvalue), 3),
         "n": len(diffs),
-        "per_seed": [round(d, 2) for d in diffs],
+        # Cohen's d for a paired design, and the interval. A p-value says
+        # whether an effect is distinguishable from zero, which enough seeds
+        # always achieve; d says how large it is next to the noise, which they
+        # do not change.
+        "d": round(mean / sd, 2) if sd else None,
+        "ci_low": round(mean - half, 2),
+        "ci_high": round(mean + half, 2),
+        "per_seed": [round(x, 2) for x in diffs],
     }
 
 
@@ -127,23 +137,27 @@ def main() -> None:
                 },
             }
 
-    # fusion benefit, align - concat, paired per seed
+    # fusion benefit, align - concat, paired per seed. The per-seed diffs are
+    # kept unrounded and keyed by seed, because the interaction below is built
+    # from them: it was built from the rounded `per_seed` list that test()
+    # reports for display, and positionally rather than by seed, so the one
+    # statistic behind the central equivalence claim disagreed with
+    # scripts/equivalence.py in its last digit -- [-0.32, +0.81] against
+    # [-0.31, +0.81] for the same fifteen runs.
     benefit = {}
+    benefit_by_seed: dict[str, dict[int, float]] = {}
     for label in ENCODERS:
         a = cells[label]["hateclipper/align"]["auroc_by_seed"]
         c = cells[label]["hateclipper/concat"]["auroc_by_seed"]
         seeds = sorted(set(a) & set(c))
-        benefit[label] = test([a[s] - c[s] for s in seeds])
+        benefit_by_seed[label] = {s: a[s] - c[s] for s in seeds}
+        benefit[label] = test([benefit_by_seed[label][s] for s in seeds])
 
     interaction = {}
     for left, right in combinations(ENCODERS, 2):
+        shared = sorted(set(benefit_by_seed[left]) & set(benefit_by_seed[right]))
         interaction[f"{left} - {right}"] = test(
-            [
-                x - y
-                for x, y in zip(
-                    benefit[left]["per_seed"], benefit[right]["per_seed"], strict=True
-                )
-            ]
+            [benefit_by_seed[left][s] - benefit_by_seed[right][s] for s in shared]
         )
 
     architecture = {}

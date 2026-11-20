@@ -186,6 +186,26 @@ paper and the statistic behind it cannot drift apart. At five seeds the test
 has four degrees of freedom: "n.s." means these runs do not establish it, not
 that there is no difference.
 
+**A statistic is computed from the raw values, never from the rounded ones
+the paper prints.** `paper_numbers.py` rounds each comparison's per-seed
+differences to two decimals because that is what the manuscript shows, and the
+interaction was then built from that rounded list -- and positionally rather
+than by seed. Over fifteen runs it put the central claim's interval at
+[-0.32, +0.81] where `equivalence.py` and `compare_cells.py`, both reading raw
+values, give [-0.31, +0.81]. One number, three scripts, a hundredth apart: the
+size is not the point, three code paths for one quantity is.
+`tests/test_paper_numbers.py` pins the interaction to the unrounded,
+seed-matched differences and pins the two scripts to agree.
+
+**A generator is not a build: documents go through `paper/build.sh`.** The
+docx library cannot set section bidi, so `build.sh` inserts it afterwards.
+Calling `node report_build.js` directly therefore writes a report that opens,
+passes schema validation and reads in the wrong direction -- which is exactly
+what a rebuild of `gozaresh.docx` did. `build.sh` now builds either document,
+and its bidi step exits non-zero if no `<w:sectPr>` took it. It also rezips
+with `zip -D`: a docx carrying directory entries opens in Word but has failed
+to open through cloud services, and every build before this one carried five.
+
 **The validation column cannot compare variants.** The validation AUROC each
 run records is the maximum over 20 epochs that selection picked, so it is
 biased upward, and the bias need not be equal across variants -- align feeds

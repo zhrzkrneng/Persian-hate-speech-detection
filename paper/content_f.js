@@ -66,26 +66,42 @@ perSeed.push(P([fa(
   "همه‌ی بذرها هم‌علامت‌اند یا یک بذرِ پرت تمام اثر را ساخته است."),
 ], { indent: { firstLine: 0 } }));
 
-perSeed.push(caption("جدول (۹): سودِ ترکیب به تفکیک بذر (align منهای concat)"));
-const W9 = [1400, 560, 560, 560, 560, 560];
+perSeed.push(caption(
+  "جدول (۹): پراکندگیِ خامِ سودِ ترکیب در پانزده بذر"));
+const W9 = [1500, 800, 700, 700, 700];
 perSeed.push(table(W9, [
   new TableRow({ tableHeader: true, children: [
     cell([T("رمزگذار", { bold: true })], { header: true, width: W9[0] }),
-    ...[0, 1, 2, 3, 4].map((s) =>
-      cell([TL(`بذر ${s}`, { bold: true })], { header: true, width: W9[s + 1], ltr: true })),
+    cell([T("هم‌علامت", { bold: true })], { header: true, width: W9[1] }),
+    cell([T("کمینه", { bold: true })], { header: true, width: W9[2] }),
+    cell([T("بیشینه", { bold: true })], { header: true, width: W9[3] }),
+    cell([T("میانه", { bold: true })], { header: true, width: W9[4] }),
   ]}),
-  ...ENC.map((e) => new TableRow({ children: [
-    cell([TL(e)], { width: W9[0], align: AlignmentType.START }),
-    ...ben(e).per_seed.map((d, i) =>
-      cell([TL(signed(d))], { width: W9[i + 1], ltr: true })),
-  ]})),
+  ...ENC.map((e) => {
+    const d = ben(e).per_seed;
+    const sorted = [...d].sort((x, y) => x - y);
+    const positive = d.filter((x) => x > 0).length;
+    // How many seeds share the sign of the mean. A table of fifteen raw
+    // differences does not fit a two-column page, and this answers the
+    // question that table was there for: whether one lucky run carries the
+    // effect.
+    const agreeing = ben(e).mean >= 0 ? positive : d.length - positive;
+    const median = sorted[Math.floor(sorted.length / 2)];
+    return new TableRow({ children: [
+      cell([TL(e)], { width: W9[0], align: AlignmentType.START }),
+      cell([TL(`${agreeing}/${d.length}`)], { width: W9[1], ltr: true }),
+      cell([TL(signed(sorted[0]))], { width: W9[2], ltr: true }),
+      cell([TL(signed(sorted[sorted.length - 1]))], { width: W9[3], ltr: true }),
+      cell([TL(signed(median))], { width: W9[4], ltr: true }),
+    ]});
+  }),
 ]));
 
-perSeed.push(P([fa("برای "), en("CLIP ViT-B/32"), fa(
-  " هر پنج بذر هم‌علامت‌اند و برای "), en("CLIPfa"), fa(
-  " نیز چنین است؛ یعنی دو اثرِ معناداری که این مقاله گزارش می‌کند متکی به " +
-  "یک اجرای خوش‌شانس نیستند. برای دو رمزگذار دیگر علامت‌ها آمیخته‌اند، که " +
-  "با نتیجه‌ی ناچیزبودنِ اثر هم‌خوان است."),
+perSeed.push(P([fa(
+  "ستونِ «هم‌علامت» می‌گوید چند بذر از پانزده با علامتِ میانگین هم‌جهت‌اند. " +
+  "اگر اثری را یک اجرای خوش‌شانس می‌ساخت، این ستون نزدیک نیمه می‌ایستاد و " +
+  "فاصله‌ی کمینه تا بیشینه از صفر می‌گذشت. برای رمزگذارهایی که اثرشان " +
+  "معنادار است چنین نیست."),
 ], { spacing: { before: 140 } }));
 
 // ---- goes into §6 ----

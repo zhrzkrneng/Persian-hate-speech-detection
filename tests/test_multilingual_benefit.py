@@ -138,3 +138,65 @@ def test_the_per_encoder_summary_counts_the_negative_languages(world: Path) -> N
     assert summary[LABEL]["negative_in"] == 3
     assert summary[LABEL]["n"] == 3
     assert summary[LABEL]["mean"] < 0
+
+
+def test_reliability_is_high_when_cells_are_measured_precisely(world: Path) -> None:
+    """Four cells far apart, each estimated tightly: little attenuation."""
+    rows = [
+        {"benefit": b, "benefit_sd": 0.1, "seeds": [0, 1, 2, 3, 4]}
+        for b in (-3.0, -1.0, 1.0, 3.0)
+    ]
+    assert mb.reliability(rows)["reliability"] > 0.95
+
+
+def test_reliability_collapses_when_the_noise_swamps_the_spread(world: Path) -> None:
+    """The case that would make a null meaningless, and must be visible.
+
+    If each cell's standard error is as large as the variation between cells,
+    nothing can be concluded from a correlation, and the reliability has to say
+    so rather than quietly reporting a coefficient.
+    """
+    rows = [
+        {"benefit": b, "benefit_sd": 5.0, "seeds": [0, 1, 2, 3, 4]}
+        for b in (-0.3, -0.1, 0.1, 0.3)
+    ]
+    assert mb.reliability(rows)["reliability"] < 0.2
+
+
+def test_within_language_fits_use_only_that_language(world: Path) -> None:
+    """Inside one language the four encoders share captions and memes, so the
+    annotation-style confound of the pooled axis is gone."""
+    rows = []
+    for language, offset in (("en", 0.0), ("de", 10.0)):
+        for i, encoder in enumerate(("A", "B", "C", "D")):
+            rows.append(
+                {
+                    "encoder": encoder,
+                    "language": language,
+                    "alignment": 10.0 * i + offset,
+                    "benefit": -1.0 * i,  # perfectly decreasing inside each language
+                    "benefit_sd": 0.1,
+                    "seeds": [0, 1],
+                }
+            )
+    out = mb.within_language(rows)
+    assert set(out) == {"en", "de"}
+    for value in out.values():
+        assert value["n"] == 4
+        assert value["pearson_r"] == pytest.approx(-1.0, abs=1e-6)
+
+
+def test_a_language_with_too_few_cells_is_skipped(world: Path) -> None:
+    """Two points are collinear; no coefficient is reported from them."""
+    rows = [
+        {
+            "encoder": e,
+            "language": "en",
+            "alignment": a,
+            "benefit": b,
+            "benefit_sd": 0.1,
+            "seeds": [0, 1],
+        }
+        for e, a, b in (("A", 10.0, 1.0), ("B", 20.0, 2.0))
+    ]
+    assert mb.within_language(rows) == {}
