@@ -217,12 +217,15 @@ body.push(new Paragraph({
     "while a significantly weaker encoder gains more than a stronger one, so " +
     "capacity is not what decides. We then test the proposed explanation over " +
     "twenty encoder-language cells, reading 300 parallel memes zero-shot in " +
-    "five languages. Alignment does not predict the fusion benefit, and " +
-    "dropping the cells near chance does not recover a relationship; what " +
-    "generalises is dependence on the encoder, not the alignment axis. The " +
-    "phenomenon is real and the usual explanation for it is insufficient. No " +
-    "public Persian hateful-meme dataset exists and no Persian number is " +
-    "reported.",
+    "five languages. Alignment does not predict the fusion benefit: neither " +
+    "dropping the cells near chance, nor correcting for measurement error, " +
+    "nor fitting each language separately recovers a relationship. The same " +
+    "dependence appears in the architecture: MemeCLIP's three additions help " +
+    "on one encoder and hurt on another, both significantly, so the sign " +
+    "flips. What generalises is dependence on the encoder, not the alignment " +
+    "axis -- the phenomenon is real and the usual explanation for it is " +
+    "insufficient. No public Persian hateful-meme dataset exists and no " +
+    "Persian number is reported.",
     { size: SIZE.body }))],
 }));
 body.push(new Paragraph({

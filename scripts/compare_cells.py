@@ -110,12 +110,34 @@ def report(label: str, diffs: list[float], seeds: list[int]) -> None:
     p = float(result.pvalue)
     stars = "***" if p < 0.001 else "**" if p < 0.01 else "*" if p < 0.05 else "n.s."
 
+    # Cohen's d for a paired design: the mean difference in units of its own
+    # standard deviation. A p-value says whether an effect is distinguishable
+    # from zero, which more seeds will always eventually achieve; d says how
+    # large it is relative to the noise, which more seeds do not change. Both
+    # belong beside each other, and the conventional reading is 0.2 small,
+    # 0.5 medium, 0.8 large.
+    d = mean / sd if sd else float("inf")
+    size = (
+        "large"
+        if abs(d) >= 0.8
+        else "medium"
+        if abs(d) >= 0.5
+        else "small"
+        if abs(d) >= 0.2
+        else "negligible"
+    )
+    half = stats.t.ppf(0.975, len(diffs) - 1) * sem
+
     print(f"{label}")
     print(f"  seeds {seeds}")
-    print("  per seed: " + "  ".join(f"{d:+.2f}" for d in diffs))
+    print("  per seed: " + "  ".join(f"{x:+.2f}" for x in diffs))
     print(
         f"  mean {mean:+.2f}  sd {sd:.2f}  sem {sem:.2f}  "
         f"t({len(diffs) - 1}) = {float(result.statistic):.2f}  p = {p:.3f}  {stars}"
+    )
+    print(
+        f"  95% CI [{mean - half:+.2f}, {mean + half:+.2f}]  "
+        f"Cohen's d = {d:+.2f} ({size})"
     )
 
 

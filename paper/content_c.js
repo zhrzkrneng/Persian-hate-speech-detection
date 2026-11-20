@@ -19,23 +19,36 @@ body.push(P([fa("جدول ("), en("3"), fa(
 ], { indent: { firstLine: 0 } }));
 
 body.push(caption("جدول (۳): سودِ ترکیب (align منهای concat)، تفاضل جفتی روی پانزده بذر"));
-const W3 = [1350, 900, 850, 700, 800];
+const W3 = [1150, 700, 700, 1100, 650, 700];
 body.push(table(W3, [
   new TableRow({ tableHeader: true, children: [
     cell([T("رمزگذار", { bold: true })], { header: true, width: W3[0] }),
     cell([TL("en R@1", { bold: true })], { header: true, width: W3[1] }),
     cell([T("سود", { bold: true })], { header: true, width: W3[2] }),
-    cell([TL("sd", { bold: true })], { header: true, width: W3[3] }),
-    cell([TL("p", { bold: true })], { header: true, width: W3[4] }),
+    cell([T("بازه ۹۵٪", { bold: true })], { header: true, width: W3[3] }),
+    cell([TL("d", { bold: true })], { header: true, width: W3[4] }),
+    cell([TL("p", { bold: true })], { header: true, width: W3[5] }),
   ]}),
   ...ENC.map((e) => new TableRow({ children: [
     cell([TL(e)], { width: W3[0], align: AlignmentType.START }),
     cell([TL(fmt(ret(e, "en", "t2i_r1")))], { width: W3[1], ltr: true }),
     cell([TL(signed(ben(e).mean), { bold: ben(e).p < 0.05 })], { width: W3[2], ltr: true }),
-    cell([TL(fmt(ben(e).sd))], { width: W3[3], ltr: true }),
-    cell([TL(`${fmt(ben(e).p, 3)} ${star(ben(e).p)}`)], { width: W3[4], ltr: true }),
+    cell([TL(`[${signed(ben(e).ci_low)}, ${signed(ben(e).ci_high)}]`)],
+      { width: W3[3], ltr: true }),
+    cell([TL(signed(ben(e).d))], { width: W3[4], ltr: true }),
+    cell([TL(`${fmt(ben(e).p, 3)} ${star(ben(e).p)}`)], { width: W3[5], ltr: true }),
   ]})),
 ]));
+
+body.push(P([fa(
+  "ستون "), en("d"), fa(
+  " اندازه‌ی اثرِ کوهن است: میانگینِ تفاضل بر حسب انحراف معیارِ خودش. " +
+  "مقدار "), en("p"), fa(
+  " می‌گوید آیا اثر از صفر قابل تشخیص است، که با بذرِ کافی سرانجام همیشه " +
+  "می‌شود؛ "), en("d"), fa(
+  " می‌گوید نسبت به نویز چقدر بزرگ است، که با بذرِ بیشتر تغییر نمی‌کند. " +
+  "هر چهار اثرِ این جدول بزرگ‌اند (قرارداد: ۰٫۸ به بالا بزرگ)."),
+], { spacing: { before: 140 } }));
 
 body.push(P([fa(
   "دو اثرِ معنادار در دو جهتِ مخالف. در هم‌ترازیِ سطح شانس، ضرب عنصری " +

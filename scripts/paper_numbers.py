@@ -84,13 +84,23 @@ def test(diffs: list[float]) -> dict:
     from scipy import stats
 
     result = stats.ttest_1samp(diffs, 0.0)
+    mean, sd = st.mean(diffs), st.stdev(diffs)
+    sem = sd / len(diffs) ** 0.5
+    half = stats.t.ppf(0.975, len(diffs) - 1) * sem
     return {
-        "mean": round(st.mean(diffs), 2),
-        "sd": round(st.stdev(diffs), 2),
+        "mean": round(mean, 2),
+        "sd": round(sd, 2),
         "t": round(float(result.statistic), 2),
         "p": round(float(result.pvalue), 3),
         "n": len(diffs),
-        "per_seed": [round(d, 2) for d in diffs],
+        # Cohen's d for a paired design, and the interval. A p-value says
+        # whether an effect is distinguishable from zero, which enough seeds
+        # always achieve; d says how large it is next to the noise, which they
+        # do not change.
+        "d": round(mean / sd, 2) if sd else None,
+        "ci_low": round(mean - half, 2),
+        "ci_high": round(mean + half, 2),
+        "per_seed": [round(x, 2) for x in diffs],
     }
 
 
