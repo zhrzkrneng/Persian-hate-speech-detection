@@ -151,6 +151,63 @@ def per_encoder(rows: list[dict]) -> dict:
     return out
 
 
+def reliability(rows: list[dict]) -> dict:
+    """How much of the spread between cells is signal rather than noise?
+
+    The first objection to a null correlation is that both variables are
+    measured with error, which drags any correlation toward zero. That is a
+    real worry here: each benefit is a mean over five seeds, not a fixed
+    quantity. Rather than argue about it, measure it.
+
+    Reliability is the share of the variance between cells that is not
+    within-cell noise. A correlation is attenuated by the square root of it,
+    so dividing the observed coefficient by that square root bounds what the
+    relationship could be if the noise were removed entirely. If that bound is
+    still near zero, the null is not an artefact of measurement.
+    """
+    benefits = [r["benefit"] for r in rows]
+    sems = [r["benefit_sd"] / len(r["seeds"]) ** 0.5 for r in rows]
+    between = st.stdev(benefits)
+    within = (sum(s**2 for s in sems) / len(sems)) ** 0.5
+    share = max(0.0, between**2 - within**2) / between**2
+    return {
+        "between_sd": round(between, 3),
+        "mean_sem": round(within, 3),
+        "reliability": round(share, 3),
+    }
+
+
+def within_language(rows: list[dict]) -> dict:
+    """The same relationship, fitted inside each language separately.
+
+    The twenty-point axis compares languages, and Crossmodal-3600's captions
+    are written per language rather than translated, so part of any gap along
+    it is annotation style. Inside one language that confound is gone: the
+    four encoders are measured on the same captions and the same memes, so
+    only the encoder differs. Four points per language cannot reach
+    significance, but five independent fits agreeing in sign says more than
+    one fit over twenty mixed points.
+    """
+    from scipy import stats
+
+    out = {}
+    for language in LANGUAGES:
+        sub = [r for r in rows if r["language"] == language]
+        if len(sub) < 3:
+            continue
+        xs = [r["alignment"] for r in sub]
+        ys = [r["benefit"] for r in sub]
+        pearson = stats.pearsonr(xs, ys)
+        spearman = stats.spearmanr(xs, ys)
+        out[language] = {
+            "n": len(sub),
+            "pearson_r": round(float(pearson.statistic), 3),
+            "pearson_p": round(float(pearson.pvalue), 3),
+            "spearman_rho": round(float(spearman.statistic), 3),
+        }
+    return out
+
+
 def stars(p: float) -> str:
     return "***" if p < 0.001 else "**" if p < 0.01 else "*" if p < 0.05 else "n.s."
 
@@ -193,6 +250,38 @@ def report(rows: list[dict]) -> dict:
         "relationship."
     )
 
+    noise = reliability(rows)
+    bound = (
+        abs(overall["pearson_r"]) / noise["reliability"] ** 0.5
+        if noise["reliability"] > 0
+        else float("inf")
+    )
+    print(
+        f"\n  measurement error cannot explain it. The benefits vary by "
+        f"{noise['between_sd']:.2f}\n  between cells against a typical standard error "
+        f"of {noise['mean_sem']:.2f}, so the\n  measure is "
+        f"{noise['reliability']:.2f} reliable. Correcting for that attenuation\n"
+        f"  bounds the coefficient at |r| <= {bound:.3f}, still nothing."
+    )
+
+    by_language = within_language(rows)
+    if by_language:
+        print("\nthe same fit inside each language, where encoders share captions:")
+        for language, value in by_language.items():
+            print(
+                f"  {language}  n = {value['n']}  r = {value['pearson_r']:+.3f} "
+                f"(p = {value['pearson_p']:.3f})  rho = {value['spearman_rho']:+.2f}"
+            )
+        signs = [v["pearson_r"] for v in by_language.values()]
+        if all(x <= 0 for x in signs):
+            print(
+                "\n  Every language gives a non-positive coefficient. Four points\n"
+                "  cannot reach significance, but five independent fits agreeing in\n"
+                "  sign is harder to dismiss than one fit over twenty mixed points,\n"
+                "  and it is free of the annotation-style confound the pooled axis\n"
+                "  carries."
+            )
+
     encoders = per_encoder(rows)
     print("\nbenefit per encoder, across the five languages:")
     for label, value in encoders.items():
@@ -207,7 +296,14 @@ def report(rows: list[dict]) -> dict:
         "of them, which is\n  consistent with its Hateful Memes result and "
         "inconsistent with alignment\n  being what decides."
     )
-    return {"overall": overall, "subsets": subsets, "per_encoder": encoders}
+    return {
+        "overall": overall,
+        "subsets": subsets,
+        "per_encoder": encoders,
+        "reliability": noise,
+        "attenuation_bound": round(bound, 3),
+        "within_language": by_language,
+    }
 
 
 def draw(rows: list[dict], path: Path) -> None:

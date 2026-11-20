@@ -2048,6 +2048,44 @@
         "n": 5,
         "negative_in": 5
       }
+    },
+    "reliability": {
+      "between_sd": 2.121,
+      "mean_sem": 0.823,
+      "reliability": 0.85
+    },
+    "attenuation_bound": 0.175,
+    "within_language": {
+      "en": {
+        "n": 4,
+        "pearson_r": -0.395,
+        "pearson_p": 0.605,
+        "spearman_rho": -0.4
+      },
+      "de": {
+        "n": 4,
+        "pearson_r": -0.63,
+        "pearson_p": 0.37,
+        "spearman_rho": -0.4
+      },
+      "es": {
+        "n": 4,
+        "pearson_r": -0.235,
+        "pearson_p": 0.765,
+        "spearman_rho": -0.2
+      },
+      "hi": {
+        "n": 4,
+        "pearson_r": -0.018,
+        "pearson_p": 0.982,
+        "spearman_rho": -0.6
+      },
+      "zh": {
+        "n": 4,
+        "pearson_r": -0.325,
+        "pearson_p": 0.675,
+        "spearman_rho": 0.4
+      }
     }
   },
   "provisional": [],
