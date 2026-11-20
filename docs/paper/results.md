@@ -19,16 +19,16 @@ supports.
 | --- | --- | --- | --- | --- | --- |
 | CLIP ViT-L/14 | Hate-CLIPper | concat | 81.46 ± 0.28 | 73.50 ± 0.74 | 73.04 ± 0.85 |
 | CLIP ViT-L/14 | Hate-CLIPper | align | 82.33 ± 0.48 | 72.94 ± 1.18 | 72.31 ± 1.34 |
-| CLIP ViT-L/14 | MemeCLIP | align | **82.54 ± 0.36** | 72.08 ± 2.13 | 71.27 ± 2.56 |
+| CLIP ViT-L/14 | MemeCLIP | align | **82.75 ± 0.40** | 72.92 ± 1.57 | 72.25 ± 1.86 |
 | CLIP ViT-B/32 | Hate-CLIPper | concat | 78.04 ± 0.40 | 68.23 ± 0.99 | 67.22 ± 1.24 |
 | CLIP ViT-B/32 | Hate-CLIPper | align | 78.67 ± 0.51 | 68.38 ± 0.95 | 67.35 ± 1.23 |
-| CLIP ViT-B/32 | MemeCLIP | align | 78.77 ± 0.79 | 68.12 ± 1.26 | 66.77 ± 1.93 |
-| jina-clip-v2 | Hate-CLIPper | concat | 79.46 ± 0.27 | 69.52 ± 1.35 | 68.41 ± 1.79 |
-| jina-clip-v2 | Hate-CLIPper | align | 79.20 ± 0.52 | 70.70 ± 1.01 | 69.74 ± 1.40 |
-| jina-clip-v2 | MemeCLIP | align | 77.88 ± 0.51 | 69.78 ± 1.33 | 68.68 ± 1.80 |
+| CLIP ViT-B/32 | MemeCLIP | align | 78.68 ± 0.68 | 68.79 ± 1.09 | 67.72 ± 1.53 |
+| jina-clip-v2 | Hate-CLIPper | concat | 79.64 ± 0.30 | 69.59 ± 1.05 | 68.50 ± 1.40 |
+| jina-clip-v2 | Hate-CLIPper | align | 79.24 ± 0.43 | 70.50 ± 1.04 | 69.48 ± 1.42 |
+| jina-clip-v2 | MemeCLIP | align | 78.31 ± 0.58 | 69.55 ± 1.31 | 68.31 ± 1.81 |
 | CLIPfa | Hate-CLIPper | concat | 62.60 ± 0.54 | 56.47 ± 0.81 | 53.08 ± 2.42 |
-| CLIPfa | Hate-CLIPper | align | 60.92 ± 0.74 | 56.35 ± 1.05 | 53.83 ± 2.25 |
-| CLIPfa | MemeCLIP | align | 61.77 ± 1.29 | 57.74 ± 0.95 | 56.79 ± 1.38 |
+| CLIPfa | Hate-CLIPper | align | 60.92 ± 0.74 | 56.32 ± 1.02 | 53.86 ± 2.07 |
+| CLIPfa | MemeCLIP | align | 61.95 ± 1.23 | 58.21 ± 1.56 | 57.10 ± 2.56 |
 
 Fusion ablation, all variants at one projection width, reported separately
 because a cross run at $n=256$ is not comparable with an align run at
@@ -82,54 +82,71 @@ taken **per seed** and tested against zero with a two-tailed paired *t*-test.
 Two independent means with their own error bars would leave in the seed noise
 the two cells share, and that noise is most of what separates them.
 
-At five seeds the test has four degrees of freedom and very little power. It
-can confirm a large effect and cannot rule out a small one, so **n.s. here
-means "five runs do not establish this", never "there is no difference".**
+Each cell runs fifteen seeds, which the central claim needed: at five it rested
+on a non-significant test, and a non-significant test is not evidence of
+equivalence. Where this study asserts that two things do *not* differ, it says
+so with an interval and a two one-sided test against a margin fixed in advance
+at 1.0 AUROC — smaller than any effect reported here as real. `n.s.` on its own
+still means "these runs do not establish it", never "there is no difference";
+only a TOST that rejects carries the second meaning.
 
 **Fusion benefit**, align − concat under Hate-CLIPper:
 
-| encoder | Δ AUROC | sd | *t*(4) | *p* | |
+| encoder | Δ AUROC | sd | *t*(14) | *p* | |
 | --- | --- | --- | --- | --- | --- |
-| CLIP ViT-B/32 | **+0.84** | 0.55 | 3.43 | **0.027** | * |
-| CLIP ViT-L/14 | +0.72 | 0.62 | 2.58 | 0.061 | n.s. |
-| jina-clip-v2 | −0.26 | 0.38 | −1.54 | 0.198 | n.s. |
-| CLIPfa | **−1.53** | 0.99 | −3.46 | **0.026** | * |
+| CLIP ViT-B/32 | **+0.63** | 0.69 | 3.50 | **0.004** | ** |
+| CLIP ViT-L/14 | **+0.87** | 0.60 | 5.67 | **<0.001** | *** |
+| jina-clip-v2 | **−0.39** | 0.36 | −4.30 | **<0.001** | *** |
+| CLIPfa | **−1.68** | 1.03 | −6.30 | **<0.001** | *** |
 
 **Does the fusion benefit depend on the encoder?** The difference of two
 paired differences, over the same seeds:
 
-| pair | Δ Δ AUROC | sd | *t*(4) | *p* | |
+| pair | Δ Δ AUROC | sd | *t*(14) | *p* | |
 | --- | --- | --- | --- | --- | --- |
-| **CLIP ViT-L/14 − CLIP ViT-B/32** | **−0.12** | 0.90 | −0.29 | **0.785** | **n.s.** |
-| CLIP ViT-L/14 − jina-clip-v2 | +0.98 | 0.41 | 5.30 | 0.006 | ** |
-| CLIP ViT-B/32 − jina-clip-v2 | +1.10 | 0.85 | 2.89 | 0.045 | * |
-| CLIP ViT-L/14 − CLIPfa | +2.25 | 1.56 | 3.22 | 0.032 | * |
-| CLIP ViT-B/32 − CLIPfa | +2.37 | 1.06 | 5.00 | 0.008 | ** |
-| jina-clip-v2 − CLIPfa | +1.27 | 1.26 | 2.26 | 0.087 | n.s. |
+| **CLIP ViT-L/14 − CLIP ViT-B/32** | +0.25 | 1.01 | 0.94 | 0.361 | **n.s.** |
+| CLIP ViT-L/14 − jina-clip-v2 | **+1.27** | 0.60 | 8.18 | **<0.001** | *** |
+| CLIP ViT-B/32 − jina-clip-v2 | **+1.02** | 0.76 | 5.22 | **<0.001** | *** |
+| CLIP ViT-L/14 − CLIPfa | **+2.55** | 1.13 | 8.78 | **<0.001** | *** |
+| CLIP ViT-B/32 − CLIPfa | **+2.31** | 1.43 | 6.27 | **<0.001** | *** |
+| jina-clip-v2 − CLIPfa | **+1.29** | 1.18 | 4.22 | **<0.001** | *** |
 
 **Encoder and architecture:**
 
-| comparison | Δ AUROC | sd | *t*(4) | *p* | |
+| comparison | Δ AUROC | sd | *t*(14) | *p* | |
 | --- | --- | --- | --- | --- | --- |
-| encoder: CLIP ViT-B/32 − jina-clip-v2, concat | **−1.51** | 0.12 | −28.23 | <0.001 | *** |
-| encoder: CLIP ViT-L/14 − jina-clip-v2, concat | +1.91 | 0.28 | 15.06 | <0.001 | *** |
-| encoder: CLIP ViT-L/14 − jina-clip-v2, align | +2.89 | 0.49 | 13.24 | <0.001 | *** |
-| encoder: CLIP ViT-L/14 − CLIPfa, concat | +18.73 | 0.59 | 71.13 | <0.001 | *** |
-| architecture: MemeCLIP − Hate-CLIPper, CLIP ViT-L/14 | +0.47 | 0.35 | 3.04 | 0.038 | * |
-| architecture: MemeCLIP − Hate-CLIPper, CLIP ViT-B/32 | +0.17 | 0.23 | 1.58 | 0.189 | n.s. |
-| architecture: MemeCLIP − Hate-CLIPper, jina-clip-v2 | −1.33 | 0.98 | −3.02 | 0.039 | * |
-| architecture: MemeCLIP − Hate-CLIPper, CLIPfa | +0.78 | 1.75 | 1.00 | 0.373 | n.s. |
+| encoder: CLIP ViT-B/32 − jina-clip-v2, concat | **−1.60** | 0.49 | −12.57 | **<0.001** | *** |
+| encoder: CLIP ViT-L/14 − jina-clip-v2, concat | **+1.82** | 0.33 | 21.43 | **<0.001** | *** |
+| encoder: CLIP ViT-L/14 − jina-clip-v2, align | **+3.09** | 0.61 | 19.52 | **<0.001** | *** |
+| encoder: CLIP ViT-L/14 − CLIPfa, concat | **+18.86** | 0.64 | 113.64 | **<0.001** | *** |
+| architecture: MemeCLIP − Hate-CLIPper, CLIP ViT-L/14 | **+0.41** | 0.58 | 2.78 | **0.015** | * |
+| architecture: MemeCLIP − Hate-CLIPper, CLIP ViT-B/32 | +0.01 | 0.61 | 0.08 | 0.934 | n.s. |
+| architecture: MemeCLIP − Hate-CLIPper, jina-clip-v2 | **−0.93** | 0.70 | −5.18 | **<0.001** | *** |
+| architecture: MemeCLIP − Hate-CLIPper, CLIPfa | **+1.03** | 1.29 | 3.11 | **0.008** | ** |
 
 ## 4. What this establishes
 
 **The benefit of fusion is a property of the encoder's feature space, not of
 its capacity.** This is the central result and it rests on one control. CLIP
-ViT-L/14 and CLIP ViT-B/32 differ by 3.4 AUROC in absolute terms — a large gap
-in this table — and their measured alignment differs by 1.3 points of R@1.
-Their fusion benefits are statistically indistinguishable (−0.12, *p* = 0.785).
-Both differ from jina-clip-v2 (*p* = 0.006, *p* = 0.045) and from CLIPfa
-(*p* = 0.032, *p* = 0.008), whose alignments are 10 points higher and 59 points
-lower respectively. Same alignment, same benefit, different capacity.
+ViT-L/14 and CLIP ViT-B/32 differ by 3.42 AUROC under concatenation
+(*p* < 0.001) — a large gap in this table — while their measured alignment
+differs by 1.3 points of R@1.
+
+Their fusion benefits are **equivalent**, which is a stronger statement than
+non-significant and is made with a test built for it. The paired difference is
++0.25 with a 95% interval of [-0.31, +0.81], and two one-sided tests against a
+margin of 1.0 AUROC reject at *p* = 0.006. An effect of a point or more is
+therefore **excluded**, not merely unobserved — and a point is smaller than
+every fusion benefit and every architecture effect this study reports.
+
+The margin was fixed before the numbers were in, and the distinction matters:
+at five seeds the same comparison read -0.27 with an interval of
+[−1.51, +0.97] and TOST *p* = 0.088, which excluded nothing. The sign of the
+estimate also flipped between five seeds and fifteen, which is what an
+interval that wide is warning about.
+
+Every other pair of encoders differs, each at *p* < 0.001 (§3). Same
+alignment, same benefit, different capacity.
 
 **A weaker encoder gains more than a stronger one.** CLIP ViT-B/32 scores
 significantly *below* jina-clip-v2 under concatenation (−1.51, *p* < 0.001) and
@@ -170,13 +187,39 @@ jina-clip-v2 (−1.33, *p* = 0.039). The sign flips.
 
 ## 5. What this does not establish
 
-**The absolute level does not match the published one.** Hate-CLIPper reports
-85.8 AUROC on this split; the align cell here reaches 81.99, **3.8 points
-short**. The qualitative effect reproduces, but this pipeline is weaker in
-absolute terms than the original. Every claim above is a comparison *within*
-this pipeline, where everything but one variable is held fixed. **Equality with
-the published table is not claimed**, and no number here should be read against
-another paper's.
+**The absolute level sits below the published one, and the comparison needs
+care.** Hate-CLIPper's abstract reports 85.8 AUROC on this split, and an
+earlier draft of this document read the gap against that number. It is the
+wrong row. Their Table 1 ablates the number of pre-output layers, and 85.8 is
+align with **three**; the configs here use one, whose published counterpart is
+85.46. Their Table 3 gives nine hyperparameters -- image size, CLIP variant,
+projection and pre-output width, optimiser, epochs, batch size, learning rate,
+weight decay and gradient clip -- and all nine match the configs here, so the
+difference is not budget, width or optimiser. The transcription is in
+`docs/reference/hate-clipper-table1.md`.
+
+Against the matching row the picture is mixed rather than uniformly worse:
+
+| cell (1 pre-output layer) | published | here, 15 seeds |
+| --- | --- | --- |
+| concat | 79.87 | **81.46 ± 0.28** |
+| align | 85.46 | 82.33 ± 0.48 |
+
+The concat cell here is **above** theirs. What differs is the size of the
+fusion benefit: +5.59 in their table, +0.87 here. That is the quantity this
+study is about, so the discrepancy is reported rather than explained away, and
+no claim here rests on matching their absolute level.
+
+Two further differences in protocol are worth stating, because they bear on
+how the numbers compare. Their table gives no seed count and no standard
+deviation, so each cell appears to be a single run, while the differences at
+issue here are under a point of AUROC -- which is why this study averages
+fifteen. And dev-seen does not rank their variants the way test-seen does: the
+best dev cell is cross fusion at 82.62, whose test score is 85.12, while the
+best test cell ranks fourth on dev. Selecting on dev and reading test once,
+which is the protocol here, returns 85.12 from that table rather than 85.8.
+This is a statement about what the table shows; the paper does not describe
+how its numbers were selected.
 
 **Four encoders is four points.** The claims that carry weight above are the
 paired and interaction tests, each over five shared seeds. The *shape* of the
@@ -185,9 +228,11 @@ That extension was run; §7 reports what it found.
 
 **CLIPfa's benefit is measured where the model barely works.** Its absolute
 AUROC is 62.7 against a chance of 50. The negative fusion benefit there is a
-real, significant effect, but it is an effect inside a near-failure regime, and
-it should be described as such rather than as a general property of
-low-alignment encoders.
+real effect and a strongly significant one — -1.68, p < 0.001 over fifteen
+seeds, where five gave -1.93 at p = 0.004 — so it is not optimiser noise on a
+short sample. It remains an effect inside a near-failure regime, and it is
+described as such rather than as a general property of low-alignment
+encoders.
 
 **Validation and test disagree about the fusion direction, and on jina the
 validation difference is the significant one.** On `dev_seen`, align − concat
@@ -213,9 +258,15 @@ question cheaply, not because it competes.
 ## 6. Missing cells, named rather than left blank
 
 **cross fusion.** At $n=256$ the first classifier layer holds 67.6M parameters
-and a single seed takes hours on the four CPU cores available, so five seeds
-were not run. At $n=1024$ the layer would hold about 1.07B parameters and does
-not fit a free GPU at all. The ablation is reported as two of three variants.
+and a single seed takes hours on the four CPU cores available; at $n=1024$ the
+layer would hold about 1.07B and does not fit a free GPU at all. The ablation
+is therefore reported as two of three variants.
+
+What that costs is smaller than it looks, and Hate-CLIPper's own table says so.
+Their cross cell at one pre-output layer reaches 85.12 on test-seen using 1.1B
+trainable parameters, against 85.46 for align at 2.9M — **below** the cheap
+variant at 380 times the parameters. The absent cell is a missing cost, not a
+missing advantage, which is why no claim here depends on it.
 
 **Retrieval over the full benchmark.** The Crossmodal-3600 numbers were
 measured on a 1,000-image subset, identical across every encoder and language,

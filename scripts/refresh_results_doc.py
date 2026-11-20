@@ -23,6 +23,7 @@ import json
 import re
 import statistics as st
 import sys
+from itertools import combinations
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -46,6 +47,86 @@ ROW = re.compile(
 )
 
 
+# The statistics tables in section 3. Each row names a comparison in its first
+# cell and carries delta, sd, t, p and stars; the row label is the key, so the
+# table's ordering and any emphasis around a label survive a refresh.
+STAT_ROW = re.compile(
+    r"^\| (\*{0,2})([^|*]+?)\1 \| \*{0,2}[+\u2212\-][\d.]+\*{0,2} \| [\d.]+ \| "
+    r"[+\u2212\-]?[\d.]+ \| \*{0,2}[<\d.]+\*{0,2} \| \*{0,4}(?:n\.s\.)?\*{0,4} \|$"
+)
+
+
+def _signed(value: float) -> str:
+    """Minus sign, not hyphen: the document uses U+2212 throughout."""
+    return f"{'+' if value >= 0 else chr(0x2212)}{abs(value):.2f}"
+
+
+def _stars(p_value: float) -> str:
+    if p_value < 0.001:
+        return "***"
+    if p_value < 0.01:
+        return "**"
+    if p_value < 0.05:
+        return "*"
+    return "n.s."
+
+
+def statistics() -> dict[str, dict]:
+    """Every comparison the section 3 tables quote, keyed by its row label."""
+    from scipy import stats
+
+    def cell(encoder: str, architecture: str, fusion: str) -> dict[int, float]:
+        directory = HMC / ENCODERS[encoder] / architecture / fusion
+        return {
+            json.loads(p.read_text(encoding="utf-8"))["seed"]: json.loads(
+                p.read_text(encoding="utf-8")
+            )["test"]["auroc"]
+            * 100
+            for p in sorted(directory.glob("seed*.json"))
+        }
+
+    def test(diffs: list[float]) -> dict:
+        result = stats.ttest_1samp(diffs, 0.0)
+        return {
+            "mean": st.mean(diffs),
+            "sd": st.stdev(diffs),
+            "t": float(result.statistic),
+            "p": float(result.pvalue),
+            "df": len(diffs) - 1,
+        }
+
+    def paired(a: dict[int, float], b: dict[int, float]) -> list[float]:
+        return [a[s] - b[s] for s in sorted(set(a) & set(b))]
+
+    out: dict[str, dict] = {}
+    benefit = {}
+    for encoder in ENCODERS:
+        diffs = paired(
+            cell(encoder, "hateclipper", "align"),
+            cell(encoder, "hateclipper", "concat"),
+        )
+        benefit[encoder] = diffs
+        out[encoder] = test(diffs)
+        out[f"architecture: MemeCLIP \u2212 Hate-CLIPper, {encoder}"] = test(
+            paired(
+                cell(encoder, "memeclip", "align"),
+                cell(encoder, "hateclipper", "align"),
+            )
+        )
+    for left, right in combinations(ENCODERS, 2):
+        pairs = zip(benefit[left], benefit[right], strict=True)
+        out[f"{left} \u2212 {right}"] = test([x - y for x, y in pairs])
+    for fusion in ("concat", "align"):
+        for left, right in combinations(ENCODERS, 2):
+            out[f"encoder: {left} \u2212 {right}, {fusion}"] = test(
+                paired(
+                    cell(left, "hateclipper", fusion),
+                    cell(right, "hateclipper", fusion),
+                )
+            )
+    return out
+
+
 def measured(encoder: str, architecture: str, fusion: str) -> dict[str, str] | None:
     directory = HMC / ENCODERS[encoder] / ARCHITECTURES[architecture] / fusion
     files = sorted(directory.glob("seed*.json"))
@@ -59,10 +140,49 @@ def measured(encoder: str, architecture: str, fusion: str) -> dict[str, str] | N
     return out
 
 
+DF_HEADER = re.compile(r"\*t\*\((\d+)\)")
+
+
 def rewrite(text: str) -> tuple[str, list[str]]:
     changes: list[str] = []
+    stats_by_label = statistics()
+    # The column header names the degrees of freedom, which is data: it was
+    # written as t(4) at five seeds and has to follow the records too.
+    degrees = {v["df"] for v in stats_by_label.values()}
+    header_df = str(max(degrees)) if len(degrees) == 1 else None
     lines = []
     for line in text.split("\n"):
+        if header_df and DF_HEADER.search(line) and line.startswith("| "):
+            fixed = DF_HEADER.sub(f"*t*({header_df})", line)
+            if fixed != line:
+                changes.append(f"degrees of freedom header -> t({header_df})")
+            lines.append(fixed)
+            continue
+
+        stat = STAT_ROW.match(line)
+        if stat and stat.group(2).strip() in stats_by_label:
+            emphasis, label = stat.group(1), stat.group(2).strip()
+            values = stats_by_label[label]
+            star = _stars(values["p"])
+            shown = "<0.001" if values["p"] < 0.001 else f"{values['p']:.3f}"
+            mark = "**" if values["p"] < 0.05 else ""
+            delta = f"{mark}{_signed(values['mean'])}{mark}"
+            # U+2212 for a negative t too, to match the rest of the document.
+            t_shown = (
+                f"{chr(0x2212)}{abs(values['t']):.2f}"
+                if values["t"] < 0
+                else f"{values['t']:.2f}"
+            )
+            tail = "**" + star + "**" if emphasis else star
+            rebuilt = (
+                f"| {emphasis}{label}{emphasis} | {delta} | {values['sd']:.2f} "
+                f"| {t_shown} | {mark}{shown}{mark} | {tail} |"
+            )
+            if rebuilt != line:
+                changes.append(f"{label}: statistics refreshed")
+            lines.append(rebuilt)
+            continue
+
         match = ROW.match(line)
         if not match:
             lines.append(line)
