@@ -26,8 +26,8 @@ supports.
 | jina-clip-v2 | Hate-CLIPper | concat | 79.46 ± 0.27 | 69.52 ± 1.35 | 68.41 ± 1.79 |
 | jina-clip-v2 | Hate-CLIPper | align | 79.20 ± 0.52 | 70.70 ± 1.01 | 69.74 ± 1.40 |
 | jina-clip-v2 | MemeCLIP | align | 77.88 ± 0.51 | 69.78 ± 1.33 | 68.68 ± 1.80 |
-| CLIPfa | Hate-CLIPper | concat | 62.53 ± 0.52 | 56.44 ± 0.83 | 52.86 ± 2.50 |
-| CLIPfa | Hate-CLIPper | align | 60.73 ± 0.82 | 56.44 ± 0.90 | 53.97 ± 0.99 |
+| CLIPfa | Hate-CLIPper | concat | 62.60 ± 0.54 | 56.47 ± 0.81 | 53.08 ± 2.42 |
+| CLIPfa | Hate-CLIPper | align | 60.92 ± 0.74 | 56.35 ± 1.05 | 53.83 ± 2.25 |
 | CLIPfa | MemeCLIP | align | 61.77 ± 1.29 | 57.74 ± 0.95 | 56.79 ± 1.38 |
 
 Fusion ablation, all variants at one projection width, reported separately
