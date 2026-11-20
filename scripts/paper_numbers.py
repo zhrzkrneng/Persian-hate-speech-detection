@@ -102,6 +102,7 @@ def test(diffs: list[float]) -> dict:
         "ci_high": round(mean + half, 2),
         # Unrounded, for the multiplicity correction: Holm compares p with a
         # threshold as small as alpha/m, which three decimals cannot resolve.
+        # It is stripped before the file is written -- see strip_exact below.
         "p_exact": float(result.pvalue),
         "per_seed": [round(x, 2) for x in diffs],
     }
@@ -224,6 +225,22 @@ def main() -> None:
         left, right = key.split(" - ")
         primary[f"interaction: {left} \u2212 {right}"] = values["p_exact"]
     corrected = holm(primary, ALPHA)
+
+    # An unrounded scipy p-value is not reproducible across environments: the
+    # same fifteen runs gave 5.806825246529435e-05 here and ...443e-05 on the
+    # 3.10 runner, one ULP apart, which turned the committed file stale and CI
+    # red. It is needed to apply Holm and never afterwards, so it does not go
+    # in the file. Everything written below is rounded.
+    def strip_exact(section: dict) -> dict:
+        return {
+            k: {f: v for f, v in row.items() if f != "p_exact"}
+            for k, row in section.items()
+        }
+
+    benefit = strip_exact(benefit)
+    architecture = strip_exact(architecture)
+    interaction = strip_exact(interaction)
+    encoder_gap = strip_exact(encoder_gap)
     survivors = [row for row in corrected.values() if row["holds"]]
     tightest = min(survivors, key=lambda r: r["margin"]) if survivors else None
     multiplicity = {
