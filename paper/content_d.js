@@ -8,6 +8,14 @@ const tok = (model, lang) =>
   (N.tokenisation.rows || []).find((r) => r.model === model && r.language === lang);
 
 const E = require("./content_e.js");
+// The seed count is data, not prose: the English abstract said "five seeds"
+// for a week after every cell had been re-run at fifteen, because the Persian
+// abstract was updated by hand and this one was not. It now comes from the
+// records, and tests/test_paper_abstracts.py fails if any abstract disagrees.
+const SEED_WORDS = { 5: "five", 10: "ten", 15: "fifteen", 20: "twenty" };
+const SEED_N = N.fusion_benefit["CLIP ViT-L/14"].n;
+const SEED_WORD = SEED_WORDS[SEED_N] || String(SEED_N);
+
 const body = [];
 
 // ---------- 5.5 tokenisation ----------
@@ -207,7 +215,7 @@ body.push(new Paragraph({
     "element-wise. That mechanism has been reported to give no advantage for a " +
     "language the encoder never saw, attributed to misaligned feature spaces, " +
     "but the attribution had not been tested. We test it. Four frozen encoders " +
-    "are trained on the Hateful Memes Challenge over five seeds, and each " +
+    `are trained on the Hateful Memes Challenge over ${SEED_WORD} seeds, and each ` +
     "encoder's alignment is measured independently of training by zero-shot " +
     "retrieval on Crossmodal-3600. The fusion benefit changes sign with " +
     "alignment: it harms at chance-level alignment, helps at moderate " +
