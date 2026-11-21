@@ -220,6 +220,15 @@ makes "no difference" easier to assert. The narrowest survivor is the MemeCLIP
 effect on CLIP ViT-L/14 (p = 0.0148 against 0.0167), and that claim is in the
 abstract, so it is the one a replication should be expected to lose first.
 
+**A docx run object must not be wrapped in another run.** `P()` mapped every
+item it was given through `new TextRun(r)`, which silently destroyed the eight
+`FootnoteReferenceRun` objects passed into it: the manuscript carried eight
+footnote bodies and zero references to them, opened cleanly and passed schema
+validation. `P()` now passes a run object through, and
+`tests/test_paper_footnotes.py` reads the built document and fails on a body
+with no reference, a reference with no body, a Persian footnote, a repeated
+term, or missing per-page renumbering.
+
 **The validation column cannot compare variants.** The validation AUROC each
 run records is the maximum over 20 epochs that selection picked, so it is
 biased upward, and the bias need not be equal across variants -- align feeds

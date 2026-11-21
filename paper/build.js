@@ -5,7 +5,7 @@ const path = require("path");
 const {
   Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
   AlignmentType, HeadingLevel, WidthType, BorderStyle, ShadingType,
-  SectionType, ImageRun, PageNumber, Footer,
+  SectionType, ImageRun, PageNumber, Footer, FootnoteReferenceRun,
 } = require("docx");
 const { SIZE, half, fa, en } = require("./style.js");
 
@@ -27,7 +27,12 @@ function P(runs, opts = {}) {
   } = opts;
   return new Paragraph({
     bidirectional: true, alignment: align, spacing, indent, keepNext,
-    children: runs.map((r) => new TextRun(r)),
+    // A run that is already a docx run object -- a FootnoteReferenceRun from
+    // fnote() -- passes through. Wrapping one in TextRun produced a document
+    // with eight footnote bodies and zero references to them: it opened, it
+    // validated, and not one footnote was visible.
+    children: runs.map((r) => (r instanceof TextRun || r instanceof
+      FootnoteReferenceRun ? r : new TextRun(r))),
   });
 }
 
@@ -78,6 +83,37 @@ const ltr = (s) => LRM + s + LRM;
 // belongs in a table cell, not in a sentence. Keep four-decimal numbers out
 // of running Persian text.
 
+// ---------- footnotes ----------
+// The journal asks for the Latin equivalent of a translated technical term in
+// a footnote at its first use, and for real Word footnotes created through
+// References / Insert Footnote rather than hand-numbered text. Numbering must
+// restart on each page, which docx-js does not expose; build.sh sets it in
+// settings.xml afterwards, the same way it sets section bidi.
+//
+// fnote(latin) returns the reference run and registers the body. Calling it
+// twice for one term would produce two footnotes, so each term is registered
+// once here and the registry refuses a repeat: "first use" is a property of
+// the document, not of the author's memory.
+const footnotes = {};
+const seenTerms = new Set();
+let footnoteCount = 0;
+
+function fnote(latin) {
+  if (seenTerms.has(latin)) {
+    throw new Error(`footnote for "${latin}" was already added; it is meant ` +
+                    `to appear at the first use only`);
+  }
+  seenTerms.add(latin);
+  footnoteCount += 1;
+  footnotes[footnoteCount] = {
+    children: [new Paragraph({
+      bidirectional: false, alignment: AlignmentType.LEFT,
+      children: [new TextRun(en(latin, { size: SIZE.footnote }))],
+    })],
+  };
+  return new FootnoteReferenceRun(footnoteCount);
+}
+
 // A table sized to one column of the two-column body.
 const COL = 4600;
 function table(widths, rows) {
@@ -99,6 +135,6 @@ function table(widths, rows) {
 const T = (t, o = {}) => fa(t, { size: SIZE.tableBody, ...o });
 const TL = (t, o = {}) => en(t, { size: SIZE.tableBody, ...o });
 
-module.exports = { P, H, caption, cell, table, T, TL, COL, fmt, signed, faDigits, ltr, N, OUT,
+module.exports = { P, H, caption, cell, table, T, TL, COL, fmt, signed, faDigits, ltr, fnote, footnotes, N, OUT,
   Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, AlignmentType,
   WidthType, SectionType, ImageRun, Footer, PageNumber, fa, en, SIZE, half, fs, path };

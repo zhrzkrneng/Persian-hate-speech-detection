@@ -42,6 +42,27 @@ if added == 0:
 path.write_text(xml, encoding="utf-8")
 print(f"section bidi set on {added} section(s)")
 PY
+  # The journal asks that footnote numbering restart on each page. That is
+  # w:footnotePr/w:numRestart in settings.xml, which docx-js does not expose.
+  # Schema order inside w:settings puts it after w:evenAndOddHeaders and
+  # before w:compat, and Word rejects the file if it sits anywhere else.
+  if [ -f "$work/word/footnotes.xml" ]; then
+    python3 - "$work/word/settings.xml" <<'PYEOF'
+import sys
+from pathlib import Path
+path = Path(sys.argv[1])
+xml = path.read_text(encoding="utf-8")
+restart = '<w:footnotePr><w:numRestart w:val="eachPage"/></w:footnotePr>'
+if "w:footnotePr" in xml:
+    print("footnote restart already set")
+elif "<w:compat>" in xml:
+    path.write_text(xml.replace("<w:compat>", restart + "<w:compat>", 1),
+                    encoding="utf-8")
+    print("footnote numbering restarts each page")
+else:
+    raise SystemExit("no <w:compat> in settings.xml: cannot place footnotePr")
+PYEOF
+  fi
   # -D: no directory entries. A docx that carries them opens in Word but has
   # failed to open through cloud services, which is where a journal portal and
   # a co-author's browser both read it; every build before this one had five.
