@@ -50,6 +50,17 @@ leading sign is reordered to the far side: `-1.53` renders as `1.53-` and
 `n.s.` as `.n.s`. Inline statistics in running Persian carry U+200E for the
 same reason.
 
+**A long statistic goes in a table cell, not in a sentence.** `0.0019` in
+running text came out as `0.001` ending one line and `9.` starting the next.
+U+2060 word joiners between the digits were tried; LibreOffice broke at them
+anyway, so the only renderer available here could not confirm the fix. Keep
+four-decimal numbers out of running Persian text and put them in a column.
+
+**Table rows that cross the column break need `cantSplit: true`.** Without it
+a two-line label is torn in half across the break -- `برهم‌کنش: B/32 −`
+ending one column and `jina` opening the next. Set it on every row of a table
+long enough to cross.
+
 ## Verify a build
 
     python scripts/office/validate.py paper/maghale.docx   # from the docx skill

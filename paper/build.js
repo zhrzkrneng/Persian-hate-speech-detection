@@ -71,6 +71,12 @@ function cell(runs, { header = false, width, align = AlignmentType.CENTER,
 // Persian text needs an explicit left-to-right mark to keep its sign.
 const LRM = "\u200E";
 const ltr = (s) => LRM + s + LRM;
+// A number in running text can still break across lines: "0.0019" came out as
+// "0.001" ending one line and "9." starting the next. U+2060 word joiners
+// between the digits were tried and LibreOffice broke at them anyway, so the
+// only check available here could not confirm the fix -- a long statistic
+// belongs in a table cell, not in a sentence. Keep four-decimal numbers out
+// of running Persian text.
 
 // A table sized to one column of the two-column body.
 const COL = 4600;

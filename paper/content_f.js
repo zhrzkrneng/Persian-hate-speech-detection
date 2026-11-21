@@ -104,6 +104,105 @@ perSeed.push(P([fa(
   "معنادار است چنین نیست."),
 ], { spacing: { before: 140 } }));
 
+// ---- goes into §5, the multiplicity correction ----
+// Fourteen paired tests carry the results section. A reader is entitled to
+// ask what survives a correction, and a paper that does not answer invites
+// the question at review. The family is fixed in scripts/multiplicity.py and
+// read from runs/paper_numbers.json, so no threshold here is typed.
+const multiplicity = [];
+const MU = N.multiplicity;
+if (MU && MU.tests) {
+  const SHORT = {
+    "CLIP ViT-L/14": "L/14",
+    "CLIP ViT-B/32": "B/32",
+    "jina-clip-v2": "jina",
+    "CLIPfa": "CLIPfa",
+  };
+  const KIND = {
+    "fusion benefit": "سود ترکیب",
+    "architecture": "معماری",
+    "interaction": "برهم‌کنش",
+  };
+  const rows = Object.entries(MU.tests)
+    .sort((a, b) => a[1].rank - b[1].rank);
+
+  multiplicity.push(H("۵-۱۰ تصحیح برای مقایسه‌های چندگانه", 2));
+  multiplicity.push(P([fa(
+    "چهارده آزمونِ جفتی بارِ این بخش را می‌برند: چهار سودِ ترکیب، چهار اثرِ " +
+    "معماری و شش برهم‌کنش. در سطحِ "), en(ltr("α = 0.05")), fa(
+    " چنین خانواده‌ای به‌تنهایی از شانس حدود "), en(ltr("0.7")), fa(
+    " ردِ کاذب انتظار دارد، پس این پرسش که پس از تصحیح چه می‌ماند، پرسشِ " +
+    "بجایی است. روشِ هولم–بونفرونی به کار رفته است: هیچ فرضی درباره‌ی " +
+    "وابستگیِ آزمون‌ها نمی‌گذارد و به‌طور یکنواخت از بونفرونیِ ساده " +
+    "تواناتر است. خانواده پیش از دیدنِ آستانه‌ها در "),
+    en("scripts/multiplicity.py"), fa(
+    " تثبیت شده است، تا هیچ ادعایی نتواند برای نجاتِ خود از خانواده بیرون " +
+    "برود."),
+  ], { indent: { firstLine: 0 } }));
+
+  multiplicity.push(caption(
+    "جدول (۱۰): هولم–بونفرونی روی چهارده ادعای بخش ۵، به ترتیبی که روش " +
+    "بررسی می‌کند"));
+  const W10 = [1320, 600, 700, 740, 900];
+  multiplicity.push(table(W10, [
+    new TableRow({ tableHeader: true, children: [
+      cell([T("مقایسه", { bold: true })], { header: true, width: W10[0] }),
+      cell([T("p", { bold: true })], { header: true, width: W10[1] }),
+      cell([T("آستانه", { bold: true })], { header: true, width: W10[2] }),
+      cell([T("حاشیه", { bold: true })], { header: true, width: W10[3] }),
+      cell([T("", { bold: true })], { header: true, width: W10[4] }),
+    ]}),
+    ...rows.map(([label, row]) => {
+      const [kind, pair] = label.split(": ");
+      const names = pair.split(" − ").map((e) => SHORT[e] || e).join(" − ");
+      const shown = row.p < 0.001 ? "<0.001" : fmt(row.p, 3);
+      // cantSplit: fourteen rows cross the column break, and without it a
+      // two-line label is torn in half -- "برهم‌کنش: B/32 −" ending one
+      // column and "jina" opening the next.
+      return new TableRow({ cantSplit: true, children: [
+        cell([T(KIND[kind] || kind), TL(`: ${names}`)],
+             { width: W10[0], align: AlignmentType.START }),
+        cell([TL(shown, { bold: row.holds })], { width: W10[1], ltr: true }),
+        cell([TL(fmt(row.threshold, 4))], { width: W10[2], ltr: true }),
+        cell([TL(signed(row.margin, 4), { bold: row.holds && row.margin < 0.01 })],
+             { width: W10[3], ltr: true }),
+        cell([T(row.holds ? "می‌ماند" : "نمی‌ماند", { bold: !row.holds })],
+             { width: W10[4] }),
+      ]});
+    }),
+  ]));
+
+  multiplicity.push(P([
+    fa("هر ادعایی که این مقاله معنادار می‌خواند، می‌ماند.", { bold: true }),
+    fa(" دو سطری که نمی‌مانند، دقیقاً همان دو سطری‌اند که مقاله آن‌ها را " +
+    "«بی‌اثر» گزارش می‌کند: برهم‌کنشِ "), en("L/14"), fa(" و "), en("B/32"),
+    fa(" که در ۵-۴ نه با "), en("p"), fa(
+    " بلکه با آزمونِ هم‌ارزی برقرار می‌شود، و اثرِ معماری روی "), en("B/32"),
+    fa(". تصحیح، ردکردن را سخت‌تر می‌کند، پس نمی‌تواند ادعای «تفاوتی نیست» " +
+    "را تضعیف کند — و آزمون‌های هم‌ارزی به همین دلیل عمداً تصحیح‌نشده " +
+    "می‌مانند."),
+  ], { spacing: { before: 140 } }));
+
+  const tight = MU.tightest ? MU.tests[MU.tightest] : null;
+  if (tight) {
+    multiplicity.push(P([fa(
+      "ولی تصحیح برای خواندنِ یک ادعا بی‌اثر نیست. اثرِ "), en("MemeCLIP"),
+      fa(" روی "), en("CLIP ViT-L/14"), fa(" با "),
+      en(ltr(`p = ${fmt(tight.p, 3)}`)), fa(
+      " باریک‌ترین حاشیه‌ی خانواده را دارد؛ ستونِ «حاشیه» در جدول آن را " +
+      "می‌دهد. همین ادعاست که در چکیده آمده. می‌ماند، و در عینِ حال نخستین " +
+      "چیزی است که انتظار می‌رود یک بازتولید از دست بدهد. مقاله آن را " +
+      "گزارش می‌کند تا خواننده خودش وزنش را تعیین کند."),
+    ]));
+  }
+
+  multiplicity.push(P([fa(
+    "گستراندنِ خانواده به دوازده آزمونِ فاصله‌ی رمزگذارها — جمعاً ۲۶ آزمون — " +
+    "هیچ‌یک از این‌ها را عوض نمی‌کند: همان دوازده می‌مانند و همان دو " +
+    "نمی‌مانند."),
+  ]));
+}
+
 // ---- goes into §6 ----
 const proxy = [];
 proxy.push(H("۳-۳ چرا بازیابی سنجه‌ی درستی برای هم‌ترازی است", 2));
@@ -146,4 +245,6 @@ ethics.push(P([fa(
   "گردآوری ثبت می‌شود، نه پس از آن."),
 ]));
 
-module.exports = { related, method, metrics, perSeed, proxy, ethics };
+module.exports = {
+  related, method, metrics, perSeed, multiplicity, proxy, ethics,
+};

@@ -122,6 +122,7 @@ afterResults.push(P([fa(
 ], { spacing: { before: 140 } }));
 
 afterResults.push(...F.perSeed);
+afterResults.push(...F.multiplicity);
 
 // ---------- tokenisation table ----------
 const tokRows = (N.tokenisation.rows || []);

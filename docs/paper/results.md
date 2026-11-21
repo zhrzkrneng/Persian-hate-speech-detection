@@ -124,6 +124,50 @@ paired differences, over the same seeds:
 | architecture: MemeCLIP − Hate-CLIPper, jina-clip-v2 | **−0.93** | 0.70 | −5.18 | **<0.001** | *** |
 | architecture: MemeCLIP − Hate-CLIPper, CLIPfa | **+1.03** | 1.29 | 3.11 | **0.008** | ** |
 
+### Correcting for multiplicity
+
+Fourteen paired tests carry this section: four fusion benefits, four
+architecture effects and six interactions. At α = 0.05 that family expects
+about 0.7 false rejections from chance alone, so the question is what survives
+a correction. Holm-Bonferroni, which assumes nothing and is uniformly more
+powerful than Bonferroni, is applied over the family fixed in
+`scripts/multiplicity.py` — fixed there rather than here, so a claim cannot be
+moved out of the family to save it. Rows are in the order the procedure
+examines them; the first failure stops it, and everything below is retained
+whatever its *p*.
+
+| comparison | *p* | Holm threshold | |
+| --- | --- | --- | --- |
+| interaction: CLIP ViT-L/14 − CLIPfa | **<0.001** | 0.0036 | holds |
+| interaction: CLIP ViT-L/14 − jina-clip-v2 | **<0.001** | 0.0038 | holds |
+| fusion benefit: CLIPfa | **<0.001** | 0.0042 | holds |
+| interaction: CLIP ViT-B/32 − CLIPfa | **<0.001** | 0.0045 | holds |
+| fusion benefit: CLIP ViT-L/14 | **<0.001** | 0.0050 | holds |
+| interaction: CLIP ViT-B/32 − jina-clip-v2 | **<0.001** | 0.0056 | holds |
+| architecture: jina-clip-v2 | **<0.001** | 0.0063 | holds |
+| fusion benefit: jina-clip-v2 | **<0.001** | 0.0071 | holds |
+| interaction: jina-clip-v2 − CLIPfa | **<0.001** | 0.0083 | holds |
+| fusion benefit: CLIP ViT-B/32 | **0.004** | 0.0100 | holds |
+| architecture: CLIPfa | **0.008** | 0.0125 | holds |
+| architecture: CLIP ViT-L/14 | **0.015** | 0.0167 | holds |
+| interaction: CLIP ViT-L/14 − CLIP ViT-B/32 | 0.361 | 0.0250 | **fails** |
+| architecture: CLIP ViT-B/32 | 0.934 | 0.0500 | **fails** |
+
+**Every claim this paper calls significant survives.** The two rows that fail
+are the two it reports as *null* — the CLIP ViT-L/14 − CLIP ViT-B/32
+interaction, which §4 establishes by equivalence rather than by a *p*-value,
+and the CLIP ViT-B/32 architecture effect. A correction makes rejection
+harder, so it cannot weaken a claim that nothing differs; the equivalence
+tests are deliberately left uncorrected for that reason.
+
+The correction is not free of consequence for how one claim should be read.
+The MemeCLIP effect on CLIP ViT-L/14 clears its threshold by the narrowest
+margin in the family, and that is the claim this paper puts in its abstract.
+It survives, and it is the one a replication should be expected to lose first.
+
+Widening the family to the twelve encoder-gap tests as well, 26 in all,
+changes none of this: the same twelve hold and the same two fail.
+
 ## 4. What this establishes
 
 **The benefit of fusion is a property of the encoder's feature space, not of
@@ -354,8 +398,8 @@ depends on the encoder; the measured alignment is not what it depends on.
 
 ### Why this is not the same quantity
 
-Two differences bound the conclusion and belong in the text rather than in a
-footnote.
+Three differences bound the conclusion and belong in the text rather than in
+a footnote.
 
 These cells are **zero-shot transfer**: the head trains on English Hateful
 Memes and reads a different corpus in a different language, where the
@@ -370,5 +414,19 @@ averaging 9.3, and jina scores higher on German (84.29) than on English
 cross-language gap is annotation style rather than encoder ability. Comparing
 encoders *within* a language is clean; this axis is not, and it rests on
 exactly that comparison.
+
+And these cells run **five seeds, where §1 runs fifteen** — the asymmetry is
+conspicuous in a paper whose own central claim needed fifteen and whose
+five-seed estimate of it came out with the wrong sign. The objection is fair
+and it is the reason the reliability calculation above exists rather than a
+sixteenth significance test: between-cell spread of 2.12 against a typical
+within-cell SEM of 0.82 puts the measure's reliability at 0.85, and correcting
+the correlation for that attenuation still bounds it at |*r*| ≤ 0.175. Five
+seeds are enough to establish *this* conclusion precisely because the
+conclusion is a null that survives being corrected upward; they would not be
+enough to establish a small positive relationship, and none is claimed. The
+within-language fits are the same answer from the other side: each rests on
+four points and none reaches significance, but all five slopes are
+non-positive.
 
 Everything above comes from `python -m scripts.multilingual_benefit`.

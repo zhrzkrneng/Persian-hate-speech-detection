@@ -117,3 +117,37 @@ def test_script_runs_and_is_idempotent(tmp_path: Path) -> None:
     assert json.loads(out.read_text(encoding="utf-8")) == json.loads(
         RECORDS.read_text(encoding="utf-8")
     ), "runs/paper_numbers.json is stale; run python -m scripts.paper_numbers"
+
+
+STATISTIC_SECTIONS = (
+    "fusion_benefit",
+    "architecture",
+    "interaction",
+    "encoder_gap",
+    "multiplicity",
+)
+
+
+def test_no_unrounded_float_is_committed(numbers: dict) -> None:
+    """Every statistic in the file must survive being regenerated elsewhere.
+
+    An unrounded scipy p-value does not. The same fifteen runs gave
+    5.806825246529435e-05 in the cloud session and ...443e-05 on the Python
+    3.10 runner -- one ULP apart, enough to make the committed file read stale
+    and turn CI red, and a difference no reader of this paper could ever care
+    about. Holm needs the exact value while it runs; nothing needs it after.
+    """
+
+    def walk(node, path: str):
+        if isinstance(node, dict):
+            for key, value in node.items():
+                walk(value, f"{path}.{key}")
+        elif isinstance(node, list):
+            for i, value in enumerate(node):
+                walk(value, f"{path}[{i}]")
+        elif isinstance(node, float):
+            assert node == round(node, 6), f"{path} = {node!r} is unrounded"
+
+    for section in STATISTIC_SECTIONS:
+        if section in numbers:
+            walk(numbers[section], section)

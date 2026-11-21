@@ -1089,6 +1089,113 @@
       ]
     }
   },
+  "multiplicity": {
+    "alpha": 0.05,
+    "family_size": 14,
+    "n_holds": 12,
+    "tests": {
+      "interaction: CLIP ViT-L/14 − CLIPfa": {
+        "rank": 1,
+        "p": 0.0,
+        "threshold": 0.0036,
+        "margin": 0.0036,
+        "holds": true
+      },
+      "interaction: CLIP ViT-L/14 − jina-clip-v2": {
+        "rank": 2,
+        "p": 0.0,
+        "threshold": 0.0038,
+        "margin": 0.0038,
+        "holds": true
+      },
+      "fusion benefit: CLIPfa": {
+        "rank": 3,
+        "p": 0.0,
+        "threshold": 0.0042,
+        "margin": 0.0041,
+        "holds": true
+      },
+      "interaction: CLIP ViT-B/32 − CLIPfa": {
+        "rank": 4,
+        "p": 0.0,
+        "threshold": 0.0045,
+        "margin": 0.0045,
+        "holds": true
+      },
+      "fusion benefit: CLIP ViT-L/14": {
+        "rank": 5,
+        "p": 0.0001,
+        "threshold": 0.005,
+        "margin": 0.0049,
+        "holds": true
+      },
+      "interaction: CLIP ViT-B/32 − jina-clip-v2": {
+        "rank": 6,
+        "p": 0.0001,
+        "threshold": 0.0056,
+        "margin": 0.0054,
+        "holds": true
+      },
+      "architecture: jina-clip-v2": {
+        "rank": 7,
+        "p": 0.0001,
+        "threshold": 0.0063,
+        "margin": 0.0061,
+        "holds": true
+      },
+      "fusion benefit: jina-clip-v2": {
+        "rank": 8,
+        "p": 0.0007,
+        "threshold": 0.0071,
+        "margin": 0.0064,
+        "holds": true
+      },
+      "interaction: jina-clip-v2 − CLIPfa": {
+        "rank": 9,
+        "p": 0.0009,
+        "threshold": 0.0083,
+        "margin": 0.0075,
+        "holds": true
+      },
+      "fusion benefit: CLIP ViT-B/32": {
+        "rank": 10,
+        "p": 0.0036,
+        "threshold": 0.01,
+        "margin": 0.0064,
+        "holds": true
+      },
+      "architecture: CLIPfa": {
+        "rank": 11,
+        "p": 0.0077,
+        "threshold": 0.0125,
+        "margin": 0.0048,
+        "holds": true
+      },
+      "architecture: CLIP ViT-L/14": {
+        "rank": 12,
+        "p": 0.0148,
+        "threshold": 0.0167,
+        "margin": 0.0019,
+        "holds": true
+      },
+      "interaction: CLIP ViT-L/14 − CLIP ViT-B/32": {
+        "rank": 13,
+        "p": 0.3611,
+        "threshold": 0.025,
+        "margin": -0.3361,
+        "holds": false
+      },
+      "architecture: CLIP ViT-B/32": {
+        "rank": 14,
+        "p": 0.934,
+        "threshold": 0.05,
+        "margin": -0.884,
+        "holds": false
+      }
+    },
+    "tightest": "architecture: CLIP ViT-L/14",
+    "tightest_margin": 0.0019
+  },
   "encoder_gap": {
     "CLIP ViT-L/14 - CLIP ViT-B/32 (align)": {
       "mean": 3.67,

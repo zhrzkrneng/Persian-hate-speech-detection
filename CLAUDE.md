@@ -206,6 +206,20 @@ and its bidi step exits non-zero if no `<w:sectPr>` took it. It also rezips
 with `zip -D`: a docx carrying directory entries opens in Word but has failed
 to open through cloud services, and every build before this one carried five.
 
+**Every significance claim goes through the multiplicity correction.**
+Fourteen paired tests carry the results section, so at alpha = 0.05 the family
+expects about 0.7 false rejections from chance alone, and a paper that does
+not say what survives invites the question at review. `scripts/multiplicity.py`
+fixes the family -- fixed there, before the thresholds are seen, so a claim
+cannot be moved out of it to survive -- and applies Holm-Bonferroni; the
+results document's table and the manuscript's are both generated from it. All
+twelve significant claims hold, and the two that fail are the two reported as
+null, which a correction cannot weaken. The equivalence tests are deliberately
+left uncorrected: TOST asks the opposite question, and making rejection harder
+makes "no difference" easier to assert. The narrowest survivor is the MemeCLIP
+effect on CLIP ViT-L/14 (p = 0.0148 against 0.0167), and that claim is in the
+abstract, so it is the one a replication should be expected to lose first.
+
 **The validation column cannot compare variants.** The validation AUROC each
 run records is the maximum over 20 epochs that selection picked, so it is
 biased upward, and the bias need not be equal across variants -- align feeds
