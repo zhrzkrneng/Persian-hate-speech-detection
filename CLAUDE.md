@@ -330,6 +330,17 @@ public branch changes every SHA and breaks the commit links in merged pull
 requests, which is a cost worth paying once and not twice. If one slips in,
 fix the next commit and leave history alone.
 
+**A reference is checked against the ACL Anthology, not remembered.** The
+reading list and the manuscript both said Hate-CLIPper was published at WOAH.
+It was NLP4PI -- the Workshop on NLP for Positive Impact, a different workshop
+from the Workshop on Online Abuse and Harms -- and the anthology ID in our own
+citation (`2022.nlp4pi-1.20`) said so all along. Checking the other four
+Anthology entries at the same time found two wrong author surnames on
+MemeCLIP, two missing page ranges and two arXiv DOIs standing in for published
+ones. The error also reached advice: a venue was recommended on the strength
+of "Hate-CLIPper was published there", which was false. Before citing a venue,
+open its Anthology page.
+
 ## Before pushing
 
 ```bash
@@ -346,7 +357,7 @@ The papers this work sits against, and what each is for:
 
 | Paper | Role |
 | --- | --- |
-| [Hate-CLIPper](https://arxiv.org/abs/2210.05916) (WOAH 2022) | base architecture; its Limitations section motivates the Persian work |
+| [Hate-CLIPper](https://arxiv.org/abs/2210.05916) (NLP4PI 2022) | base architecture; its Limitations section motivates the Persian work |
 | [MemeCLIP](https://aclanthology.org/2024.emnlp-main.959) (EMNLP 2024) | second baseline; same fusion, three additions |
 | [RGCL](https://arxiv.org/abs/2311.08110) | stronger method, 87.0 AUROC; cite, do not claim SOTA over it |
 | [Multi3Hate](https://aclanthology.org/2025.naacl-long.490/) (NAACL 2025) | annotation protocol for the Persian set; cross-cultural disagreement angle |

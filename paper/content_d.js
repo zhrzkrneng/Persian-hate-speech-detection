@@ -171,6 +171,18 @@ body.push(P([fa(
 body.push(...require("./content_h.js").future);
 body.push(...E.repro);
 
+// ---------- سپاسگزاری ----------
+// The journal's author guidelines list سپاسگزاری among the required sections.
+// It is kept separate from اقرار below, which states licences and compute and
+// is not thanks. Nothing here claims funding or support that did not exist.
+body.push(H("سپاسگزاری", 1));
+body.push(P([fa(
+  "این پژوهش از هیچ حمایت مالیِ سازمانی برخوردار نبوده است. محاسبات روی " +
+  "منابع رایگانِ عمومی انجام شده و هیچ سخت‌افزار اختصاصی‌ای در کار نبوده " +
+  "است. از داورانِ ناشناسِ نشریه برای وقتی که صرف خواندن این مقاله " +
+  "می‌کنند سپاسگزاریم."),
+], { indent: { firstLine: 0 } }));
+
 // ---------- acknowledgement (اقرار) ----------
 body.push(H("اقرار", 1));
 body.push(P([fa("پیکره‌ی "), en("Hateful Memes Challenge"), fa(
@@ -188,11 +200,11 @@ body.push(P([fa("پیکره‌ی "), en("Hateful Memes Challenge"), fa(
 // ---------- references ----------
 body.push(H("منابع", 1));
 const REFS = [
-  "G. K. Kumar and K. Nandakumar, “Hate-CLIPper: Multimodal hateful meme classification based on cross-modal interaction of CLIP features,” in Proc. 2nd Workshop on NLP for Positive Impact (WOAH), 2022, pp. 171–183. doi: 10.18653/v1/2022.nlp4pi-1.20",
-  "S. Shah, S. Shrestha, S. Poudel, et al., “MemeCLIP: Leveraging CLIP representations for multimodal meme classification,” in Proc. EMNLP, 2024, pp. 17320–17332. doi: 10.18653/v1/2024.emnlp-main.959",
-  "A. V. Thapliyal, J. Pont-Tuset, X. Chen, and R. Soricut, “Crossmodal-3600: A massively multilingual multimodal evaluation dataset,” in Proc. EMNLP, 2022, pp. 715–729. doi: 10.18653/v1/2022.emnlp-main.45",
-  "J. Mei, J. Chen, W. Lin, B. Byrne, and M. Tomalin, “Improving hateful meme detection through retrieval-guided contrastive learning,” in Proc. ACL, 2024. doi: 10.48550/arXiv.2311.08110",
-  "M. D. Bui, K. von der Wense, and A. Lauscher, “Multi3Hate: Multimodal, multilingual, and multicultural hate speech detection with vision-language models,” in Proc. NAACL, 2025. doi: 10.48550/arXiv.2411.03888",
+  "G. K. Kumar and K. Nandakumar, “Hate-CLIPper: Multimodal hateful meme classification based on cross-modal interaction of CLIP features,” in Proc. 2nd Workshop on NLP for Positive Impact (NLP4PI), Abu Dhabi, United Arab Emirates, Dec. 2022, pp. 171–183. doi: 10.18653/v1/2022.nlp4pi-1.20",
+  "S. B. Shah, S. Shiwakoti, M. Chaudhary, and H. Wang, “MemeCLIP: Leveraging CLIP representations for multimodal meme classification,” in Proc. EMNLP, Miami, FL, USA, Nov. 2024, pp. 17320–17332. doi: 10.18653/v1/2024.emnlp-main.959",
+  "A. V. Thapliyal, J. Pont-Tuset, X. Chen, and R. Soricut, “Crossmodal-3600: A massively multilingual multimodal evaluation dataset,” in Proc. EMNLP, Abu Dhabi, United Arab Emirates, Dec. 2022, pp. 715–729. doi: 10.18653/v1/2022.emnlp-main.45",
+  "J. Mei, J. Chen, W. Lin, B. Byrne, and M. Tomalin, “Improving hateful meme detection through retrieval-guided contrastive learning,” in Proc. ACL (Vol. 1: Long Papers), Bangkok, Thailand, Aug. 2024, pp. 5333–5347. doi: 10.18653/v1/2024.acl-long.291",
+  "M. D. Bui, K. von der Wense, and A. Lauscher, “Multi3Hate: Multimodal, multilingual, and multicultural hate speech detection with vision-language models,” in Proc. NAACL-HLT (Vol. 1: Long Papers), Albuquerque, NM, USA, Apr. 2025, pp. 9714–9731. doi: 10.18653/v1/2025.naacl-long.490",
   "D. Kiela, H. Firooz, A. Mohan, et al., “The Hateful Memes Challenge: Detecting hate speech in multimodal memes,” in Advances in Neural Information Processing Systems (NeurIPS), vol. 33, 2020, pp. 2611–2624. doi: 10.48550/arXiv.2005.04790",
   "A. Radford, J. W. Kim, C. Hallacy, et al., “Learning transferable visual models from natural language supervision,” in Proc. ICML, 2021, pp. 8748–8763. doi: 10.48550/arXiv.2103.00020",
 ];
