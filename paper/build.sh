@@ -13,9 +13,10 @@
 # directly: `node report_build.js` writes a file that opens, validates and
 # reads in the wrong direction. A generator is not a build.
 #
-#   bash paper/build.sh                  # -> paper/maghale.docx
-#   bash paper/build.sh gozaresh.docx    # -> paper/gozaresh.docx
-#   bash paper/build.sh --all            # both
+#   bash paper/build.sh                          # -> paper/maghale.docx
+#   bash paper/build.sh gozaresh.docx            # -> the report
+#   bash paper/build.sh extended-abstract.docx   # -> the English abstract
+#   bash paper/build.sh --all                    # all three
 set -euo pipefail
 cd "$(dirname "$0")"
 
@@ -48,18 +49,43 @@ PY
   echo "wrote $out"
 }
 
+# The extended English abstract is single-column, left-to-right English, so
+# it must NOT get section bidi -- it only needs the -D rezip. Everything
+# Persian gets both.
+rezip_without_directory_entries() {
+  local out="$1"
+  local work
+  work="$(mktemp -d)"
+  # shellcheck disable=SC2064
+  trap "rm -rf '$work'" RETURN
+  unzip -q "$out" -d "$work"
+  find "$work" -type l -delete
+  (cd "$work" && rm -f "$OLDPWD/$out" && zip -qXrD "$OLDPWD/$out" .)
+  echo "wrote $out"
+}
+
 build() {
   local out="$1"
   case "$out" in
-    gozaresh.docx) node report_build.js ;;
-    *) node make.js "../runs/paper_numbers.json" "$out" ;;
+    gozaresh.docx)
+      node report_build.js
+      set_section_bidi "$out"
+      ;;
+    extended-abstract.docx)
+      node extended_abstract.js "../runs/paper_numbers.json" "$out"
+      rezip_without_directory_entries "$out"
+      ;;
+    *)
+      node make.js "../runs/paper_numbers.json" "$out"
+      set_section_bidi "$out"
+      ;;
   esac
-  set_section_bidi "$out"
 }
 
 if [ "${1:-}" = "--all" ]; then
   build maghale.docx
   build gozaresh.docx
+  build extended-abstract.docx
 else
   build "${1:-maghale.docx}"
 fi
