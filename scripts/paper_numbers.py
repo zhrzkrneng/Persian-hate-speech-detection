@@ -202,6 +202,14 @@ def main() -> None:
     if path.exists():
         tokenisation = json.loads(path.read_text())
 
+    # The equivalence results, from the file scripts/equivalence.py writes.
+    # The English manuscript quotes the TOST p for the capacity control, and
+    # typing it there is how the English abstract came to say "five seeds".
+    equivalence = {}
+    path = Path("runs/equivalence.json")
+    if path.exists():
+        equivalence = json.loads(path.read_text())
+
     # The multilingual test of this study's own prediction. Collected from the
     # same file scripts/multilingual_benefit.py writes, so the manuscript and
     # that script cannot disagree about a result the manuscript reports as a
@@ -277,6 +285,7 @@ def main() -> None:
                 "retrieval": retrieval,
                 "tokenisation": tokenisation,
                 "multilingual": multilingual,
+                "equivalence": equivalence,
                 "provisional": provisional,
                 "fallback_ref": args.fallback_ref,
             },

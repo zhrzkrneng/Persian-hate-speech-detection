@@ -39,6 +39,9 @@ const doc = new Document({
     font: { ascii: "Times New Roman", hAnsi: "Times New Roman", cs: "B Lotus" },
     size: 22,
   }}}},
+  // Footnotes registered by content modules via B.fnote(). They are collected
+  // at require() time, which happens above, so the registry is complete here.
+  footnotes: B.footnotes,
   sections: [
     { properties: { page, column: { count: 1 } }, footers: { default: footer },
       children: [...notice, ...A.front] },

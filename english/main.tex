@@ -1,0 +1,411 @@
+% ACL-format manuscript. Every statistic is injected by
+% scripts/build_english_paper.py from runs/paper_numbers.json: a placeholder
+% is a name in double angle brackets, and the renderer errors on one it has no
+% value for -- which is why this sentence spells the syntax out rather than
+% showing it. Do not type a number into this file, and do not edit
+% english/main.tex, which is generated.
+\documentclass[11pt]{article}
+
+% Official ACL style. Use \usepackage[review]{acl} for an anonymous ARR
+% submission and \usepackage{acl} for the camera-ready.
+\usepackage[review]{acl}
+
+\usepackage{times}
+\usepackage{latexsym}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{microtype}
+\usepackage{inconsolata}
+
+\title{The Benefit of Cross-Modal Fusion Is a Property of the Encoder,\\
+Not of Its Capacity}
+
+\author{Anonymous ACL submission}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Hateful meme detection requires combining an image with its text, and the
+established architectures do so by multiplying two projected feature vectors
+element-wise. That mechanism has been reported to give no advantage for a
+language the encoder never saw, a failure attributed to misaligned feature
+spaces; the attribution had not been tested. We test it. Four frozen encoders
+are trained on the Hateful Memes Challenge over 15 seeds each, and
+every encoder's cross-modal alignment is measured independently of training by
+zero-shot retrieval on Crossmodal-3600. The fusion benefit changes sign with
+the encoder, from +0.87 AUROC to $-$1.68, every cell significant
+after correcting for multiplicity. The decisive control is a pair of encoders
+from one family that differ by 3.42 AUROC in absolute score yet
+whose fusion benefits are statistically \emph{equivalent} under a two
+one-sided test against a pre-registered margin, so capacity is not what
+decides. We then test the proposed explanation over 20 encoder-language
+cells and it fails: alignment does not predict the fusion benefit
+($r = -0.161$, $p = 0.499$), and neither dropping the cells near chance,
+nor correcting for measurement error, nor fitting each language separately
+recovers a relationship. What generalises is dependence on the encoder, not
+the alignment axis. We release code, configurations and every per-seed record.
+\end{abstract}
+
+\section{Introduction}
+
+A hateful meme carries its meaning across two modalities at once: an image
+that is innocuous alone and a caption that is innocuous alone can be hateful
+together. Architectures for this task therefore combine the two feature
+vectors explicitly rather than classifying a concatenation of them. The
+dominant mechanism is the element-wise product of a projected image vector and
+a projected text vector --- the diagonal of their outer product, which
+\citet{kumar2022hateclipper} call \emph{align} fusion.
+
+That paper also reports a failure. On Tamil, its fusion variants gave no
+advantage over plain concatenation, and the authors attribute this to
+misaligned feature spaces for a language the encoder never saw. The
+attribution is plausible, it is widely repeated, and as far as we can
+establish it has never been tested. It names a cause without measuring it.
+
+This paper measures it. We vary the encoder across four frozen models that
+differ deliberately in language coverage, hold every architectural
+hyperparameter fixed, and obtain each encoder's cross-modal alignment from a
+source that no training touches. We then ask whether the first quantity
+predicts the second.
+
+Our contributions are:
+
+\begin{enumerate}
+\itemsep0em
+\item \textbf{The phenomenon is real and general.} The benefit of align
+fusion over concatenation changes \emph{sign} with the encoder, from
++0.87 AUROC to $-$1.68. All four effects survive a
+Holm--Bonferroni correction over the 14 tests this paper reports
+and all four are large relative to seed noise.
+\item \textbf{Capacity is not what decides.} Two encoders from one family
+differ by 3.42 AUROC under concatenation while their measured
+alignment differs by about one point of recall. Their fusion benefits are
+\emph{equivalent}, established by a two one-sided test against a margin fixed
+before the numbers were seen rather than by a non-significant $p$-value.
+\item \textbf{The usual explanation does not survive.} Over 20
+encoder-language cells, measured alignment does not predict the fusion benefit
+($r = -0.161$, $p = 0.499$). We close the two ways that null could be an
+artefact: an attenuation correction bounds the true correlation at
+$|r| \le 0.175$, and the 5 within-language fits are all
+non-positive.
+\item \textbf{The same dependence appears in the architecture.} Three
+additions from \citet{memeclip2024} help on one encoder (+0.41,
+$p = 0.015$) and hurt on another ($-$0.93,
+$p = $<$0.001$), both significantly.
+\end{enumerate}
+
+No public Persian hateful-meme dataset exists and we report no Persian
+classification number; what we offer instead is the measurement such a dataset
+would be evaluated against.
+
+\section{Related Work}
+
+\textbf{Fusion for hateful memes.} \citet{kiela2020hateful} introduced the
+Hateful Memes Challenge with benign confounders that defeat unimodal models.
+\citet{kumar2022hateclipper} freeze CLIP \citep{radford2021clip} and train a
+shallow head over a feature interaction matrix, reporting that align fusion
+beats concatenation. \citet{memeclip2024} keep the same fusion and add a
+residual feature adapter, a semantically regularised loss and cosine
+classifiers. \citet{rgcl2024} obtain stronger results with
+retrieval-guided contrastive learning; we cite it as the stronger method and
+make no claim of improving on it.
+
+\textbf{What these share.} All three hold the encoder fixed and argue about
+the fusion mechanism. If a property of the encoder decides how much fusion is
+worth, then a result obtained on one encoder says little about another --- and
+that is not testable with one encoder. This is the gap we address.
+
+\textbf{Multilingual and low-resource settings.}
+\citet{multi3hate2025} provide parallel memes in five languages with
+per-country annotation, which lets a single head be read across languages
+without confounding the content. \citet{crossmodal3600} provide
+per-language captions for a shared image set, from which zero-shot retrieval
+gives an alignment measure that no classifier training touches.
+
+\section{Method}
+
+\subsection{Fusion variants}
+
+Given projected image and text features $p_i, p_t \in \mathbb{R}^n$:
+
+\begin{align}
+\textsc{concat} &= [\,p_i ; p_t\,] \in \mathbb{R}^{2n} \\
+\textsc{align} &= p_i \odot p_t \in \mathbb{R}^{n} \\
+\textsc{cross} &= \mathrm{vec}(p_i \otimes p_t) \in \mathbb{R}^{n^2}
+\end{align}
+
+\textsc{align} keeps the diagonal of the feature interaction matrix; the sum
+of its elements is the dot product of the two vectors, so the vector itself is
+a per-dimension view of how far the modalities agree. At $n = 1024$ the
+\textsc{cross} variant places roughly a billion parameters in the first
+classifier layer, which is why it is reported separately
+(\S\ref{sec:limitations}).
+
+\subsection{Alignment as a measured quantity}
+
+The explanation under test names a property of the encoder's feature spaces,
+so that property must be measured without the classifier. We use zero-shot
+retrieval on Crossmodal-3600: given a caption, rank the images by cosine
+similarity and ask whether the right one comes first. No labels and no
+training are involved. On the 1{,}000-image slice we use, chance is
+0.10\%, and every recall below should be read against it.
+
+\subsection{Classifier head}
+
+The encoders stay frozen, so the trainable part is one linear projection per
+modality, the fusion, one pre-output layer with ReLU and dropout, and a linear
+output. Frozen features depend on the encoder alone, so they are encoded once
+and cached; this is what makes a sweep of this size affordable without
+dedicated hardware.
+
+\section{Experimental Setup}
+
+\textbf{Encoders.} Four frozen encoders chosen to vary language coverage
+rather than quality: CLIP ViT-L/14 and CLIP ViT-B/32, English-centred and
+differing in capacity; jina-clip-v2, multilingual; and CLIPfa, a Persian
+dual-tower model. CLIP and CLIPfa are mirror images --- each is strong in one
+language and at chance in the other --- which is what makes the set a
+controlled one.
+
+\textbf{Protocol.} Every one of the nine hyperparameters of
+\citet{kumar2022hateclipper} is held fixed across all cells. Each cell is
+trained over 15 seeds. The checkpoint with the best validation AUROC on
+\texttt{dev\_seen} is selected and \texttt{test\_seen} is evaluated once.
+
+\textbf{Statistics.} All comparisons are paired over shared seeds and reported
+with a paired $t$-test, Cohen's $d$ and a 95\% confidence interval. Claims
+that two quantities do \emph{not} differ are made with two one-sided tests
+(TOST) against a margin of 1.0 AUROC fixed before the numbers
+were seen,
+because a non-significant $p$-value is not evidence of equivalence. The
+14 tests that carry \S\ref{sec:results} are corrected for
+multiplicity with Holm--Bonferroni.
+
+\section{Results}
+\label{sec:results}
+
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{llr}
+\toprule
+Encoder & Fusion & Test AUROC \\
+\midrule
+CLIP ViT-L/14 & concat & 81.46 $\pm$ 0.28 \\
+CLIP ViT-L/14 & align  & 82.33 $\pm$ 0.48 \\
+CLIP ViT-B/32 & concat & 78.04 $\pm$ 0.40 \\
+CLIP ViT-B/32 & align  & 78.67 $\pm$ 0.51 \\
+jina-clip-v2  & concat & 79.64 $\pm$ 0.30 \\
+jina-clip-v2  & align  & 79.24 $\pm$ 0.43 \\
+CLIPfa        & concat & 62.60 $\pm$ 0.54 \\
+CLIPfa        & align  & 60.92 $\pm$ 0.74 \\
+\bottomrule
+\end{tabular}
+\caption{Test AUROC, mean $\pm$ sample standard deviation over 15
+seeds, selected on \texttt{dev\_seen} and evaluated once.}
+\label{tab:main}
+\end{table}
+
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{lrrrr}
+\toprule
+Encoder & $\Delta$ & 95\% CI & $d$ & $p$ \\
+\midrule
+CLIP ViT-L/14 & +0.87 & [+0.54, +1.20] & +1.46 & $<$0.001 \\
+CLIP ViT-B/32 & +0.63 & [+0.24, +1.01] & +0.90 & 0.004 \\
+jina-clip-v2 & $-$0.39 & [$-$0.59, $-$0.20] & $-$1.11 & 0.001 \\
+CLIPfa & $-$1.68 & [$-$2.25, $-$1.11] & $-$1.63 & $<$0.001 \\
+\bottomrule
+\end{tabular}
+\caption{Fusion benefit (align $-$ concat), paired per seed. Every row is
+significant after Holm--Bonferroni and every $|d|$ exceeds the conventional
+threshold for a large effect.}
+\label{tab:benefit}
+\end{table}
+
+\subsection{The fusion benefit changes sign}
+
+Table~\ref{tab:benefit} is the central result. Align fusion helps on both
+CLIP variants, and \emph{hurts} on jina-clip-v2 and on CLIPfa. The effect
+reported by \citet{kumar2022hateclipper} for one unseen language is therefore
+neither confined to that language nor to a failure of the encoder: it reverses
+on an encoder that is strong in the language being read.
+
+Reported $p$-values are useful only up to the point where enough seeds make
+any effect distinguishable from zero. We therefore give Cohen's $d$ beside
+each: all four are large, meaning the effects are big relative to the
+seed-to-seed noise, which more seeds do not change.
+
+\subsection{Alignment, measured without training}
+
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{lrr}
+\toprule
+Encoder & en R@1 & fa R@1 \\
+\midrule
+CLIP ViT-L/14 & 60.05 & 0.15 \\
+CLIP ViT-B/32 & 58.75 & 0.10 \\
+jina-clip-v2  & 70.25 & 66.55 \\
+CLIPfa        & 0.20 & 36.90 \\
+\bottomrule
+\end{tabular}
+\caption{Zero-shot text$\rightarrow$image R@1 on Crossmodal-3600. Chance is
+0.10\%. CLIPfa and the CLIP family are mirror images, which is what
+makes the encoder set a controlled one.}
+\label{tab:retrieval}
+\end{table}
+
+A tokeniser measurement gives the mechanism behind the gap. For captions of
+the same images, CLIP spends 50.51 tokens on a Persian caption
+against 12.60 on an English one, and its 77-token window --- an
+architectural limit, not a setting --- truncates 11.4\% of the
+Persian captions, where for jina-clip-v2 that figure is zero.
+
+\subsection{Capacity is not what decides}
+
+The explanation under test says alignment decides. The obvious rival says
+capacity does. These are separable because CLIP ViT-L/14 and CLIP ViT-B/32
+differ by 3.42 AUROC under concatenation --- a large gap in
+Table~\ref{tab:main} --- while their measured alignment differs by about one
+point of R@1.
+
+Their fusion benefits are \textbf{equivalent}. The paired difference is
++0.25 with a 95\% interval of [$-$0.31, +0.81], and the two one-sided
+tests reject at $p = 0.006$ against the pre-registered margin. An
+effect of a
+point or more is therefore \emph{excluded}, not merely unobserved --- and a
+point is smaller than every fusion benefit this paper reports. We stress that
+this is a different and stronger statement than a non-significant paired test,
+which at an earlier seed count was all we had and excluded nothing.
+
+\subsection{Architecture, the second axis}
+
+The same dependence appears when the architecture is varied instead of the
+fusion. The three additions of \citet{memeclip2024} help on CLIP ViT-L/14
+(+0.41, $p = 0.015$) and hurt on jina-clip-v2
+($-$0.93, $p = $<$0.001$). Both are significant; the sign flips
+with the encoder.
+
+\subsection{Correcting for multiplicity}
+
+14 paired tests carry this section, so we correct them with
+Holm--Bonferroni over a family fixed in advance. 12 of them hold.
+The 2 that do not are exactly the two this paper reports as
+\emph{null} --- the equivalence control above and one architecture cell ---
+and a correction cannot weaken a claim that nothing differs, which is why the
+TOST results are deliberately left uncorrected. The narrowest survivor is the
+MemeCLIP effect on CLIP ViT-L/14, at $p = 0.0148$ against a
+threshold of 0.0167; it is the claim a replication should be
+expected to lose first, and we say so rather than leave a reader to find it.
+
+\section{Testing the Prediction}
+
+If the benefit is a property of alignment, it should be predictable from the
+alignment of \emph{each} encoder-language pair, not only from four points on
+one English corpus. A head trained on English Hateful Memes reads 300 parallel
+memes zero-shot in five languages, over 5 seeds per cell, with each
+cell's alignment taken from Crossmodal-3600 in that same language. Four
+encoders over five languages is 20 points.
+
+\textbf{It does not hold.} The correlation between alignment and fusion
+benefit is $r = -0.161$ ($p = 0.499$), with Spearman
+$\rho = -0.065$ ($p = 0.786$).
+
+A negative result has two obvious explanations that have to be answered with
+numbers rather than conceded.
+
+\textbf{Measurement error.} Both variables are measured with error, which
+attenuates any correlation toward zero. Between-cell spread is 2.12
+against a typical within-cell standard error of 0.82, so the measure's
+reliability is 0.85. Correcting for that attenuation still
+bounds the true correlation at $|r| \le 0.175$. The null is not an
+artefact of noise.
+
+\textbf{Aggregation.} The 20-point axis compares languages, and
+Crossmodal-3600's captions are written per language rather than translated, so
+part of any cross-language gap is annotation style rather than encoder
+ability. Fitting within each language is immune to that confound. All
+5 within-language slopes are non-positive, from -0.63
+to -0.02. Four points per language reach no significance
+individually, but no language shows the predicted positive relationship.
+
+So the phenomenon is confirmed and the explanation is refuted: the benefit
+depends on the encoder, and the measured alignment is not what it depends on.
+
+\section{Conclusion}
+
+Whether cross-modal fusion is worth its cost depends on the encoder --- it
+changes sign --- and not on the encoder's capacity. The explanation offered
+for this in the literature, misaligned feature spaces, does not survive being
+measured. For a practitioner working in a low-resource language the
+consequence is concrete: the fusion must be ablated per encoder, because a
+result obtained with another encoder does not transfer.
+
+\section*{Limitations}
+\label{sec:limitations}
+
+\textbf{Four encoders is four points.} The relationship in \S\ref{sec:results}
+is read from four points and is not established by them. The paired and
+interaction tests are valid over 15 shared seeds; the \emph{shape} of
+the relationship is not.
+
+\textbf{No Persian classification result.} No public Persian hateful-meme
+dataset exists and this work had no annotation capacity to build one. The
+Persian-facing claims here are measurements of encoders, not of Persian meme
+classification, and they are not a substitute for it.
+
+\textbf{CLIPfa operates near chance.} Its negative fusion benefit is measured
+where the model barely works (62.60 AUROC against a chance
+level of 50). The effect is stable across 15 seeds, so it is not
+optimiser noise, but it remains an effect inside a weak regime.
+
+\textbf{Cross fusion is absent from the ablation.} At the projection width
+used here its first classifier layer would hold roughly a billion parameters.
+The reference paper's own table shows cross fusion scoring \emph{below} align
+while using some 380 times the parameters, so the missing cell is a missing
+cost rather than a missing advantage.
+
+\textbf{Absolute level.} Our concatenation row exceeds the configuration-
+matched row of \citet{kumar2022hateclipper} while our align row falls below
+it. The nine hyperparameters match, so the gap is not budget or optimiser; one
+candidate we could not rule out is the width of the image features entering
+the projection. Every claim here is a difference between two cells that read
+one cache, in which such a choice largely cancels; the absolute level is what
+moves.
+
+\textbf{Single training corpus.} All classification training is on one
+English corpus. The multilingual cells are zero-shot transfer, which is a
+different and harder regime, and at 5 seeds rather than 15.
+Those cells support a null, which correction moves upward, not a small
+positive relationship, and none is claimed.
+
+\section*{Ethics Statement}
+
+This work studies the detection of hateful content and reports no model
+intended for deployment. The Hateful Memes corpus is used under its licence
+and is not redistributed. Multi3Hate is CC BY-NC-ND 4.0, so no derived feature
+cache leaves the machine it was computed on; reporting a measurement made from
+those features is not distribution. jina-clip-v2 is CC BY-NC 4.0, which
+permits this research use, and loading it executes code downloaded from its
+model repository. A detector of hateful memes is dual-use: the same measure
+that supports moderation supports evasion, and error rates differ across
+languages in ways this paper measures rather than resolves.
+
+\bibliography{references}
+
+\appendix
+
+\section{Reproducibility}
+
+Every number in this paper is generated from committed per-seed records; none
+is typed. The build fails if a quoted statistic disagrees with the records.
+Code, configurations and all per-seed results are released with the paper.
+
+\end{document}

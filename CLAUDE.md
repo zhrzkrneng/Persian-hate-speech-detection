@@ -220,6 +220,15 @@ makes "no difference" easier to assert. The narrowest survivor is the MemeCLIP
 effect on CLIP ViT-L/14 (p = 0.0148 against 0.0167), and that claim is in the
 abstract, so it is the one a replication should be expected to lose first.
 
+**A docx run object must not be wrapped in another run.** `P()` mapped every
+item it was given through `new TextRun(r)`, which silently destroyed the eight
+`FootnoteReferenceRun` objects passed into it: the manuscript carried eight
+footnote bodies and zero references to them, opened cleanly and passed schema
+validation. `P()` now passes a run object through, and
+`tests/test_paper_footnotes.py` reads the built document and fails on a body
+with no reference, a reference with no body, a Persian footnote, a repeated
+term, or missing per-page renumbering.
+
 **The validation column cannot compare variants.** The validation AUROC each
 run records is the maximum over 20 epochs that selection picked, so it is
 biased upward, and the bias need not be equal across variants -- align feeds
@@ -330,6 +339,17 @@ public branch changes every SHA and breaks the commit links in merged pull
 requests, which is a cost worth paying once and not twice. If one slips in,
 fix the next commit and leave history alone.
 
+**A reference is checked against the ACL Anthology, not remembered.** The
+reading list and the manuscript both said Hate-CLIPper was published at WOAH.
+It was NLP4PI -- the Workshop on NLP for Positive Impact, a different workshop
+from the Workshop on Online Abuse and Harms -- and the anthology ID in our own
+citation (`2022.nlp4pi-1.20`) said so all along. Checking the other four
+Anthology entries at the same time found two wrong author surnames on
+MemeCLIP, two missing page ranges and two arXiv DOIs standing in for published
+ones. The error also reached advice: a venue was recommended on the strength
+of "Hate-CLIPper was published there", which was false. Before citing a venue,
+open its Anthology page.
+
 ## Before pushing
 
 ```bash
@@ -346,7 +366,7 @@ The papers this work sits against, and what each is for:
 
 | Paper | Role |
 | --- | --- |
-| [Hate-CLIPper](https://arxiv.org/abs/2210.05916) (WOAH 2022) | base architecture; its Limitations section motivates the Persian work |
+| [Hate-CLIPper](https://arxiv.org/abs/2210.05916) (NLP4PI 2022) | base architecture; its Limitations section motivates the Persian work |
 | [MemeCLIP](https://aclanthology.org/2024.emnlp-main.959) (EMNLP 2024) | second baseline; same fusion, three additions |
 | [RGCL](https://arxiv.org/abs/2311.08110) | stronger method, 87.0 AUROC; cite, do not claim SOTA over it |
 | [Multi3Hate](https://aclanthology.org/2025.naacl-long.490/) (NAACL 2025) | annotation protocol for the Persian set; cross-cultural disagreement angle |
