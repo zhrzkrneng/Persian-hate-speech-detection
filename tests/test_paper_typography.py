@@ -57,3 +57,30 @@ def test_the_words_that_needed_rewriting_stayed_rewritten() -> None:
     assert "نه زیربخش" not in joined, "«نه زیربخش» reads as a negation"
     assert "را می‌برد،" not in joined, "«می‌برد» should be «قطع می‌کند» here"
     assert "بعد‌به‌بعد" not in joined, "«بعد‌به‌بعد» should be «مؤلفه‌به‌مؤلفه»"
+
+
+def test_monotone_is_not_confused_with_uniform() -> None:
+    """یکنوا is monotone; یکنواخت is uniform. They are different properties.
+
+    A readability pass replaced یکنوا with یکنواخت in two places, which left
+    the manuscript using two words for one concept, one of them meaning
+    something else. The one legitimate یکنواخت is "uniformly more powerful",
+    the standard phrase for Holm against Bonferroni.
+    """
+    allowed = "به‌طور یکنواخت از بونفرونی"
+    for path in sources():
+        text = path.read_text(encoding="utf-8").replace(allowed, "")
+        assert "یکنواخت" not in text, (
+            f"{path.name} uses یکنواخت (uniform) where یکنوا (monotone) is meant"
+        )
+
+
+def test_no_invented_compound() -> None:
+    """A word coined by compressing a phrase is not a word.
+
+    "داده‌ی موجودنبوده" came out of a pass meant to make the text easier to
+    read, replacing "داده‌ای که وجود ندارد", which was already clear.
+    """
+    joined = "\n".join(p.read_text(encoding="utf-8") for p in sources())
+    for coinage in ("موجودنبوده", "آزمودهنشده", "اندازهنگرفته"):
+        assert coinage not in joined, f"invented compound: {coinage}"
