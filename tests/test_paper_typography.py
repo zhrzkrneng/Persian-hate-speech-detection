@@ -84,3 +84,25 @@ def test_no_invented_compound() -> None:
     joined = "\n".join(p.read_text(encoding="utf-8") for p in sources())
     for coinage in ("موجودنبوده", "آزمودهنشده", "اندازهنگرفته"):
         assert coinage not in joined, f"invented compound: {coinage}"
+
+
+def test_one_word_per_concept() -> None:
+    """Two words for one idea means one of them arrived by accident.
+
+    The readability pass introduced نوفه beside the نویز the manuscript
+    already used, and یکنواخت beside یکنوا. Neither was a decision.
+    """
+    joined = "\n".join(p.read_text(encoding="utf-8") for p in sources())
+    assert "نوفه" not in joined, "noise is نویز in this manuscript, not نوفه"
+
+
+def test_no_zero_width_joiner_left_mid_word() -> None:
+    """A blind replacement inside a word leaves the old ezafe behind.
+
+    Replacing نوفه with نویز turned نوفه‌ی into نویز‌ی -- a ZWNJ sitting
+    between a noun and a bare ی, which is not a form Persian has.
+    """
+    broken = re.compile(r"نویز\u200c")
+    for path in sources():
+        hit = broken.search(path.read_text(encoding="utf-8"))
+        assert not hit, f"{path.name} has a ZWNJ stranded after نویز"
