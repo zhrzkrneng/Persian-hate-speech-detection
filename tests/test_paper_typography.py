@@ -106,3 +106,16 @@ def test_no_zero_width_joiner_left_mid_word() -> None:
     for path in sources():
         hit = broken.search(path.read_text(encoding="utf-8"))
         assert not hit, f"{path.name} has a ZWNJ stranded after نویز"
+
+
+def test_additions_are_said_plainly_and_completely() -> None:
+    """افزودن needs a «به», and in this manuscript it is اضافه کردن anyway.
+
+    "سه چیز می‌افزاید" was missing its complement -- three things added *to
+    what?* -- and the same sentence appeared correctly elsewhere, so the
+    manuscript was both incomplete in one place and inconsistent across two.
+    اضافه کردن is the plainer verb and carries its preposition visibly.
+    """
+    joined = "\n".join(p.read_text(encoding="utf-8") for p in sources())
+    for form in ("می‌افزاید", "نمی‌افزاید", "می‌افزایند"):
+        assert form not in joined, f"«{form}» hides its preposition; use اضافه می‌کند"
