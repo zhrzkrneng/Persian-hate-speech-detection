@@ -202,6 +202,14 @@ def main() -> None:
     if path.exists():
         tokenisation = json.loads(path.read_text())
 
+    # The four-point alignment relationship, from scripts/alignment_benefit.py.
+    # The limitations section says Pearson looks large while Spearman does not;
+    # quoting the two coefficients is more use to a reader than saying so.
+    alignment = {}
+    path = Path("runs/alignment_benefit.json")
+    if path.exists():
+        alignment = json.loads(path.read_text())
+
     # The equivalence results, from the file scripts/equivalence.py writes.
     # The English manuscript quotes the TOST p for the capacity control, and
     # typing it there is how the English abstract came to say "five seeds".
@@ -286,6 +294,7 @@ def main() -> None:
                 "tokenisation": tokenisation,
                 "multilingual": multilingual,
                 "equivalence": equivalence,
+                "alignment_benefit": alignment,
                 "provisional": provisional,
                 "fallback_ref": args.fallback_ref,
             },
