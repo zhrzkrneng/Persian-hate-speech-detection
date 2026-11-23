@@ -119,3 +119,19 @@ def test_additions_are_said_plainly_and_completely() -> None:
     joined = "\n".join(p.read_text(encoding="utf-8") for p in sources())
     for form in ("می‌افزاید", "نمی‌افزاید", "می‌افزایند"):
         assert form not in joined, f"«{form}» hides its preposition; use اضافه می‌کند"
+
+
+def test_redistribution_is_not_said_with_a_reproduction_word() -> None:
+    """بازتوزیع and بازتولید look alike and mean opposite-ish things here.
+
+    The licensing paragraph said no part of the corpus was بازتوزیع
+    (redistributed) in the repository. The author read it as بازتولید
+    (reproduced) and asked whether the baseline had not been reproduced --
+    which it had, and which the paper reports a table of. Two sections away
+    the manuscript uses بازتولید for exactly that, so the confusion was built
+    in. Licensing is now said in plain words: no file of it is in our
+    repository.
+    """
+    joined = "\n".join(p.read_text(encoding="utf-8") for p in sources())
+    for word in ("بازتوزیع", "بازنشر"):
+        assert word not in joined, f"«{word}» reads as بازتولید; say it plainly instead"
