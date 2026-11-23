@@ -6,12 +6,12 @@
       "encoder": "clip-l14",
       "label": "CLIP ViT-L/14",
       "language": "en",
-      "t2i_r1": 60.04999876022339,
-      "i2t_r1": 72.2000002861023,
+      "t2i_r1": 60.05,
+      "i2t_r1": 72.2,
       "images": 1000,
-      "benefit": 0.87,
-      "benefit_sd": 0.6,
-      "benefit_p": 0.0,
+      "benefit": 0.8729,
+      "benefit_sd": 0.5965,
+      "benefit_p": 0.0001,
       "seeds": [
         0,
         1,
@@ -29,19 +29,19 @@
         13,
         14
       ],
-      "align_auroc": 82.33,
-      "concat_auroc": 81.46
+      "align_auroc": 82.334,
+      "concat_auroc": 81.4611
     },
     {
       "encoder": "clip-b32",
       "label": "CLIP ViT-B/32",
       "language": "en",
-      "t2i_r1": 58.74999761581421,
-      "i2t_r1": 69.9999988079071,
+      "t2i_r1": 58.75,
+      "i2t_r1": 70.0,
       "images": 1000,
-      "benefit": 0.63,
-      "benefit_sd": 0.69,
-      "benefit_p": 0.004,
+      "benefit": 0.6257,
+      "benefit_sd": 0.693,
+      "benefit_p": 0.0036,
       "seeds": [
         0,
         1,
@@ -59,19 +59,19 @@
         13,
         14
       ],
-      "align_auroc": 78.67,
-      "concat_auroc": 78.04
+      "align_auroc": 78.6652,
+      "concat_auroc": 78.0395
     },
     {
       "encoder": "jina-v2",
       "label": "jina-clip-v2",
       "language": "en",
-      "t2i_r1": 70.24999856948853,
-      "i2t_r1": 78.1000018119812,
+      "t2i_r1": 70.25,
+      "i2t_r1": 78.1,
       "images": 1000,
-      "benefit": -0.39,
-      "benefit_sd": 0.36,
-      "benefit_p": 0.001,
+      "benefit": -0.3948,
+      "benefit_sd": 0.3556,
+      "benefit_p": 0.0007,
       "seeds": [
         0,
         1,
@@ -89,18 +89,18 @@
         13,
         14
       ],
-      "align_auroc": 79.24,
-      "concat_auroc": 79.64
+      "align_auroc": 79.2433,
+      "concat_auroc": 79.6381
     },
     {
       "encoder": "clipfa",
       "label": "CLIPfa",
       "language": "en",
-      "t2i_r1": 0.20000000949949026,
-      "i2t_r1": 0.4000000189989805,
+      "t2i_r1": 0.2,
+      "i2t_r1": 0.4,
       "images": 1000,
-      "benefit": -1.68,
-      "benefit_sd": 1.03,
+      "benefit": -1.6802,
+      "benefit_sd": 1.0323,
       "benefit_p": 0.0,
       "seeds": [
         0,
@@ -119,23 +119,23 @@
         13,
         14
       ],
-      "align_auroc": 60.92,
-      "concat_auroc": 62.6
+      "align_auroc": 60.9169,
+      "concat_auroc": 62.5971
     }
   ],
   "relationship": {
     "text -> image R@1": {
       "n": 4,
-      "pearson_r": 0.7979528442666087,
-      "pearson_p": 0.20204715573339138,
-      "spearman_rho": 0.39999999999999997,
+      "pearson_r": 0.7967,
+      "pearson_p": 0.2033,
+      "spearman_rho": 0.4,
       "spearman_p": 0.6
     },
     "image -> text R@1": {
       "n": 4,
-      "pearson_r": 0.8390905048014607,
-      "pearson_p": 0.16090949519853925,
-      "spearman_rho": 0.39999999999999997,
+      "pearson_r": 0.838,
+      "pearson_p": 0.162,
+      "spearman_rho": 0.4,
       "spearman_p": 0.6
     }
   },

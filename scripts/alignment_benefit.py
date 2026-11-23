@@ -211,12 +211,15 @@ def correlate(xs: list[float], ys: list[float]) -> dict:
 
     pearson = stats.pearsonr(xs, ys)
     spearman = stats.spearmanr(xs, ys)
+    # Rounded: an unrounded scipy coefficient differs in its last bits between
+    # environments, and this file is committed and read by paper_numbers.py.
+    # The same slip once turned CI red on 3.10 while 3.12 stayed green.
     return {
         "n": len(xs),
-        "pearson_r": float(pearson.statistic),
-        "pearson_p": float(pearson.pvalue),
-        "spearman_rho": float(spearman.statistic),
-        "spearman_p": float(spearman.pvalue),
+        "pearson_r": round(float(pearson.statistic), 4),
+        "pearson_p": round(float(pearson.pvalue), 4),
+        "spearman_rho": round(float(spearman.statistic), 4),
+        "spearman_p": round(float(spearman.pvalue), 4),
     }
 
 
@@ -412,7 +415,13 @@ def main() -> None:
             {
                 "language": args.language,
                 "architecture": args.architecture,
-                "points": [vars(p) for p in points],
+                "points": [
+                    {
+                        k: round(v, 4) if isinstance(v, float) else v
+                        for k, v in vars(p).items()
+                    }
+                    for p in points
+                ],
                 "relationship": relationship,
                 "skipped": skipped,
             },
