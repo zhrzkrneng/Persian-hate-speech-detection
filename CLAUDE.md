@@ -356,6 +356,22 @@ open its Anthology page.
 ruff check . && ruff format --check . && python -m pytest tests/ -q
 ```
 
+**After a change under `paper/`, build the documents first.** The manuscript
+is withheld from the repository while the paper is under review, so CI has no
+`.docx` to read and the five footnote guards in
+`tests/test_paper_footnotes.py` skip there. They only run where the built file
+exists:
+
+```bash
+bash paper/build.sh --all && python -m pytest tests/ -q
+```
+
+A skip is not a pass. Running the suite without building first is how a
+document with eight footnote bodies and no references to them would ship
+again. Restoring the `.docx` to the repository on acceptance brings the guards
+back to CI; adding node and the `docx` package to the workflow would too, at
+the cost of a new dependency in every run.
+
 A push that turns CI red costs a cycle. For a fix to a failure, reproduce the
 failure first, then show the same check passing — the tqdm CI break was
 reproduced locally by blocking the import before the fix went up.

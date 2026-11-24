@@ -1,5 +1,12 @@
 # The manuscript
 
+> **The built `.docx` files are not committed while the paper is under
+> review.** `paper/*.docx` is gitignored for that reason. Everything needed to
+> rebuild them is here, so `bash paper/build.sh --all` reproduces all three
+> from the records. Restore them to the repository once the paper is accepted,
+> or link the published version instead.
+
+
     bash paper/build.sh                  # -> paper/maghale.docx
     bash paper/build.sh gozaresh.docx    # -> paper/gozaresh.docx (the report)
     bash paper/build.sh --all            # both
