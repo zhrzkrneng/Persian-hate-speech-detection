@@ -10,9 +10,23 @@ set that probes how these models behave on a language CLIP was never trained for
 
 ## Status
 
-Early. The pipeline runs end to end on the Hateful Memes Challenge (HMC) data,
-but no result in this repository has been validated yet. Nothing here should be
-cited.
+The study is complete. Every cell in the results table runs fifteen seeds,
+comparisons are corrected for multiplicity, and every number in the manuscript
+is generated from the per-seed records committed under `runs/` rather than
+typed. `scripts/` holds the code that produces each of them.
+
+**The manuscript itself is not in this repository while it is under review.**
+`paper/` holds the generator, the figures and the reference material, so the
+document can be rebuilt from source with `bash paper/build.sh --all`, but the
+built `.docx` files are withheld until the paper is accepted. They will be
+added back, or replaced by a link to the published version, once that is
+settled.
+
+There is still no public Persian hateful-meme dataset, and this repository
+reports no Persian classification result. What it does hold for Persian is the
+collection protocol, the annotation guideline in both languages, and the
+tooling: see `docs/collection-protocol.md` and `docs/annotation-guideline.fa.md`.
+Help with annotation is welcome.
 
 ## Motivation
 
